@@ -4,16 +4,34 @@ import { one } from "@/lib/db";
 
 export type AppUser = { id: string; name: string; email: string; termsAccepted: boolean };
 
-/** The signed-in user, or null. Creates the app profile row the first time (name only, from Google). */
-export async function getSessionUser(): Promise<AppUser | null> {
-  const { data: session } = await auth.getSession();
+const COOKIE_WRITE_ERROR = /Cookies can only be modified/i;
+
+/**
+ * The signed-in user, or null. Creates the app profile row the first time (name only, from Google).
+ *
+ * Neon keeps a short-lived copy of the session in a cookie and renews it when it runs out. Next.js only allows
+ * cookie changes in a route or a button action, not while a page is being built. Pages behind sign-in are covered
+ * by the proxy. PUBLIC pages (welcome, invite) pass `refreshTo`: if the renewal is needed, we hop through
+ * /api/session/refresh (a route, where cookies may change) and come straight back.
+ */
+export async function getSessionUser(opts?: { refreshTo?: string }): Promise<AppUser | null> {
+  let session: Awaited<ReturnType<typeof auth.getSession>>["data"];
+  try {
+    ({ data: session } = await auth.getSession());
+  } catch (err) {
+    if (opts && COOKIE_WRITE_ERROR.test(String((err as Error)?.message ?? err))) {
+      if (opts.refreshTo) redirect(`/api/session/refresh?next=${encodeURIComponent(opts.refreshTo)}`);
+      return null; // already tried once: show the signed-out view rather than loop
+    }
+    throw err;
+  }
   const u = session?.user;
   if (!u) return null;
   const email = u.email ?? "";
   const fallback = ((u.name ?? "").trim() || email.split("@")[0] || "Player").slice(0, 60);
   const row = await one<{ name: string; terms_accepted_at: Date | null }>(
     `insert into app_user (id, name) values ($1, $2)
-     on conflict (id) do update set id = excluded.id
+     on conflict (id) do update set name = case when app_user.name = 'Deleted player' then excluded.name else app_user.name end
      returning name, terms_accepted_at`,
     [u.id, fallback],
   );

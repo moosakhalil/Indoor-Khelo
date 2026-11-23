@@ -2,8 +2,10 @@ import { redirect } from "next/navigation";
 import SignInButton from "@/components/SignInButton";
 import { getSessionUser } from "@/lib/session";
 
-export default async function WelcomePage() {
-  const user = await getSessionUser();
+export default async function WelcomePage({ searchParams }: { searchParams: Promise<{ rf?: string }> }) {
+  const { rf } = await searchParams;
+  // First visit asks for a session renewal route if needed; the second visit (rf=1) never loops.
+  const user = await getSessionUser({ refreshTo: rf === "1" ? undefined : "/" });
   if (user) redirect("/home");
   return (
     <main className="app">

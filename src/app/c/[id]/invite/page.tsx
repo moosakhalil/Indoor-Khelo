@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import CommunityLogo from "@/components/CommunityLogo";
 import CopyButton from "@/components/CopyButton";
+import QrCode from "@/components/QrCode";
 import Frame from "@/components/Frame";
 import { replaceInviteAction } from "@/app/actions";
 import { requireMember } from "@/lib/community";
@@ -26,6 +27,10 @@ export default async function InvitePage({ params, searchParams }: { params: Pro
             <p className="muted" style={{ margin: "4px 0 0" }}>You are the Admin. Invite your players.</p>
           </section>
         )}
+        <section className="card center">
+          <QrCode value={link} label={`QR code that opens the invite link for ${community.name}`} />
+          <p className="muted small" style={{ margin: "8px 0 0" }}>Scan with a phone camera to join</p>
+        </section>
         <section className="card">
           <small className="muted">Invite link</small>
           <div className="row space" style={{ margin: "4px 0 10px" }}>

@@ -17,7 +17,7 @@ export default async function CommunityHome({ params }: { params: Promise<{ id: 
   return (
     <Frame communityId={id} title={community.name}>
       <div className="stack">
-        <section className="card">
+        <Link href={`/c/${id}/community`} className="card" aria-label={`Open the community page for ${community.name}`}>
           <div className="row">
             <CommunityLogo name={community.name} />
             <span className="t grow">
@@ -27,7 +27,8 @@ export default async function CommunityHome({ params }: { params: Promise<{ id: 
             <Shirt number={membership.player_number} />
           </div>
           {community.description && <p className="muted" style={{ margin: "10px 0 0" }}>{community.description}</p>}
-        </section>
+          <p className="muted small" style={{ margin: "8px 0 0" }}>Tap for the community page ›</p>
+        </Link>
 
         {membership.role === "admin" && pending.length > 0 && (
           <Link href={`/c/${id}/requests`} className="card gold row space">

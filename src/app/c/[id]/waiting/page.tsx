@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import { leaveAction } from "@/app/actions2";
 import CommunityLogo from "@/components/CommunityLogo";
 import { getCommunity, getMembership } from "@/lib/community";
 import { one } from "@/lib/db";
@@ -46,6 +47,10 @@ export default async function WaitingPage({ params }: { params: Promise<{ id: st
           </ol>
         </section>
         <Link className="btn gold" href={`/c/${id}/waiting`}>Check again</Link>
+        <form action={leaveAction}>
+          <input type="hidden" name="communityId" value={id} />
+          <button className="btn red small" style={{ width: "100%" }}>Cancel my request</button>
+        </form>
         <Link className="btn ghost" href="/choose">Back</Link>
       </div>
     </main>

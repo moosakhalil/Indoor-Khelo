@@ -39,7 +39,12 @@ export default async function ProfilePage({ params }: { params: Promise<{ id: st
           ))}
         </section>
 
-        <p className="muted small" style={{ margin: "0 2px" }}>Career stats, awards and settings arrive in later build phases.</p>
+        <section className="card list">
+          <Link href={`/c/${id}/community`} className="item"><span className="t grow"><b>Community page</b><small>Members, invite, switch, leave</small></span><span aria-hidden="true">›</span></Link>
+          <Link href="/switch" className="item"><span className="t grow"><b>Your communities</b><small>Switch, create or join another</small></span><span aria-hidden="true">›</span></Link>
+          <Link href="/account" className="item"><span className="t grow"><b>Account</b><small>Log out everywhere, delete account</small></span><span aria-hidden="true">›</span></Link>
+        </section>
+        <p className="muted small" style={{ margin: "0 2px" }}>Career stats, awards and more settings arrive in later build phases.</p>
         <SignOutButton />
         <SignOutAllButton />
       </div>

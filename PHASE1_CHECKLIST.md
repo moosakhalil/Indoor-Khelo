@@ -22,7 +22,7 @@ Status: ✅ built and checked · 🟡 built, needs a real-phone or real-Google c
 |---|---|---|---|
 | 2.1 | Create or join choice | ✅ | |
 | 2.2 | Create: name, description, location, approval switch; creator becomes Admin | ✅ | Checked against the real database. |
-| 2.2b | Community logo upload | ⏳ | Needs Neon file storage. For now the logo is a gold block with initials. |
+| 2.2b | Community logo | ✅ | Decided: no logo upload anywhere. A community is shown by a gold block with its initials. |
 | 2.3 | Invite link and unique code | ✅ | Admin can replace them; the old one stops working (tested). |
 | 2.3b | QR code for the invite | ⏳ | Not built yet. |
 | 2.4 | Join by link or code, community shown first, request to join | ✅ | |

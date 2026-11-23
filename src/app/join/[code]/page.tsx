@@ -12,8 +12,9 @@ import { COMMUNITY_MEMBER_CAP, normalizeInviteCode } from "@/lib/validation";
 export const metadata: Metadata = { title: "Join this community" };
 
 // Public: an invite link shows the community first. Signing in happens on this same screen.
-export default async function JoinPreviewPage({ params }: { params: Promise<{ code: string }> }) {
+export default async function JoinPreviewPage({ params, searchParams }: { params: Promise<{ code: string }>; searchParams: Promise<{ rf?: string }> }) {
   const { code: raw } = await params;
+  const { rf } = await searchParams;
   const code = normalizeInviteCode(decodeURIComponent(raw));
   const community = code ? await getCommunityByCode(code) : null;
 
@@ -29,7 +30,7 @@ export default async function JoinPreviewPage({ params }: { params: Promise<{ co
     );
   }
 
-  const user = await getSessionUser();
+  const user = await getSessionUser({ refreshTo: rf === "1" ? undefined : `/join/${code}` });
   if (user && !user.termsAccepted) redirect(`/terms?next=${encodeURIComponent(`/join/${code}`)}`);
 
   const [members, admin] = await Promise.all([
