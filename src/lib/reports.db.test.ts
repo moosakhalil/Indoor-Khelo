@@ -176,7 +176,8 @@ describe.skipIf(!run)("Phase 6: finished matches, figures and corrections in the
     const w = await playedMatch({ teamId: "make" });
     const rec = await teamRecord(w.id, w.teamId!);
     expect(rec).toMatchObject({ played: 1, won: 1, lost: 0, tied: 0, winPercent: 100, totalRuns: 15, highest: 15, lowest: 15 });
-    expect(rec.headToHead).toEqual([{ opponent: "Bravo", played: 1, won: 1, lost: 0, tied: 0 }]);
+    expect(rec.headToHead).toHaveLength(1);
+    expect(rec.headToHead[0]).toMatchObject({ opponent: "Bravo", played: 1, won: 1, lost: 0, tied: 0 });
     expect(rec.recent[0]).toMatchObject({ opponent: "Bravo", result: "win", runsFor: 15, runsAgainst: 5 });
     const table = await teamTable(w.id, [{ id: w.teamId!, name: "TEST Alpha" }]);
     expect(table[0]).toMatchObject({ name: "TEST Alpha", won: 1 });

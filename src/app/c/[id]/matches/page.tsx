@@ -1,9 +1,11 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import CacheRoster, { QuickMatchLink } from "@/components/CacheRoster";
 import Frame from "@/components/Frame";
 import { MatchCard } from "@/components/MatchBits";
 import { requireMember } from "@/lib/community";
 import { listMatches } from "@/lib/matches";
+import { rosterFor } from "@/lib/quickMatch";
 import { requireAcceptedUser } from "@/lib/session";
 import { getZone } from "@/lib/zone";
 
@@ -14,7 +16,7 @@ export default async function MatchesPage({ params, searchParams }: { params: Pr
   const { planned, deleted } = await searchParams;
   const user = await requireAcceptedUser();
   await requireMember(id, user.id);
-  const [all, tz] = await Promise.all([listMatches(id, user.id), getZone()]);
+  const [all, tz, roster] = await Promise.all([listMatches(id, user.id), getZone(), rosterFor(id, user.id)]);
   const live = all.filter((m) => m.status === "live" || m.status === "paused");
   const upcoming = all.filter((m) => ["draft", "scheduled", "postponed"].includes(m.status));
   const past = all.filter((m) => ["completed", "abandoned", "cancelled"].includes(m.status))
@@ -29,6 +31,8 @@ export default async function MatchesPage({ params, searchParams }: { params: Pr
           <Link href={`/c/${id}/matches/new`} className="btn gold">New match</Link>
           <Link href={`/c/${id}/matches/several`} className="btn ghost">Plan several</Link>
         </div>
+        <QuickMatchLink communityId={id} />
+        <CacheRoster communityId={id} me={user.id} members={roster.members} teams={roster.teams} />
 
         {all.length === 0 && (
           <div className="card center">

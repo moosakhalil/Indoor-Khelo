@@ -3,7 +3,9 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { WinTab, WormTab } from "@/components/AnalyticsParts";
 import { BallsTab, ChangesTab, OversTab, ScorecardTab, StatsTab, SummaryTab } from "@/components/ReportParts";
+import PdfActions from "@/components/PdfActions";
 import { buildState } from "@/lib/engine/engine";
+import { getOrigin } from "@/lib/origin";
 import { formatWhen } from "@/lib/matchRules";
 import { matchByShareToken } from "@/lib/reports";
 import { loadEvents, scorersOf } from "@/lib/scoring";
@@ -20,7 +22,7 @@ export default async function PublicReport({ params, searchParams }: { params: P
   const { tab: tabRaw } = await searchParams;
   const match = await matchByShareToken(token);
   if (!match) notFound();
-  const [events, scorers, tz] = await Promise.all([loadEvents(match.id), scorersOf(match.id), getZone()]);
+  const [events, scorers, tz, origin] = await Promise.all([loadEvents(match.id), scorersOf(match.id), getZone(), getOrigin()]);
   const built = buildState(events);
   if (!built.ok || !built.state.started) notFound();
   const m = built.state;
@@ -48,6 +50,11 @@ export default async function PublicReport({ params, searchParams }: { params: P
         {tab === "worm" && <WormTab m={m} />}
         {tab === "win" && <WinTab m={m} />}
         {tab === "changes" && <ChangesTab m={m} />}
+        <section className="card">
+          <b>PDF</b>
+          <p className="muted small" style={{ margin: "4px 0 10px" }}>Open it, save it, or send it to WhatsApp or another app.</p>
+          <PdfActions pdfBase={`/r/${token}/pdf`} shareUrl={`${origin}/r/${token}`} title={`${match.side1} v ${match.side2}`} fileName={`${match.side1}-v-${match.side2}.pdf`.replace(/[^A-Za-z0-9.-]+/g, "-")} />
+        </section>
         <section className="card center">
           <b>Scored with Indoor Khelo</b>
           <p className="muted small" style={{ margin: "6px 0 10px" }}>Score your own indoor cricket matches, with live scoring, stats and leaderboards.</p>

@@ -1,11 +1,12 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import CacheRoster, { QuickMatchLink } from "@/components/CacheRoster";
 import CommunityLogo from "@/components/CommunityLogo";
 import Frame from "@/components/Frame";
 import Shirt from "@/components/Shirt";
-import { Counts, ReplyButtons } from "@/components/MatchBits";
 import { approvedCount, listPending, requireMember } from "@/lib/community";
-import { liveMatch, nextMatch, unreadAlertCount } from "@/lib/matches";
+import { listLineup, liveMatch, nextMatch, unreadAlertCount } from "@/lib/matches";
+import { rosterFor } from "@/lib/quickMatch";
 import { recentResults } from "@/lib/reports";
 import { formatWhen } from "@/lib/matchRules";
 import { requireAcceptedUser } from "@/lib/session";
@@ -18,7 +19,7 @@ export default async function CommunityHome({ params }: { params: Promise<{ id: 
   const { id } = await params;
   const user = await requireAcceptedUser();
   const { community, membership } = await requireMember(id, user.id);
-  const [members, pending, next, alerts, tz, live, results] = await Promise.all([
+  const [members, pending, next, alerts, tz, live, results, roster] = await Promise.all([
     approvedCount(id),
     membership.role === "admin" ? listPending(id) : Promise.resolve([]),
     nextMatch(id, user.id),
@@ -26,10 +27,17 @@ export default async function CommunityHome({ params }: { params: Promise<{ id: 
     getZone(),
     liveMatch(id, user.id),
     recentResults(id),
+    rosterFor(id, user.id),
   ]);
+  // a match is "today" if it is on today's date in the viewer's own time zone
+  const dayKey = (d: Date) => new Intl.DateTimeFormat("en-CA", { timeZone: tz, year: "numeric", month: "2-digit", day: "2-digit" }).format(d);
+  const today = next && next.scheduled_at && dayKey(next.scheduled_at) === dayKey(new Date()) ? next : null;
+  const todayLineup = today ? await listLineup(id, today.id) : [];
   return (
     <Frame communityId={id} title={community.name}>
       <div className="stack">
+        <CacheRoster communityId={id} me={user.id} members={roster.members} teams={roster.teams} />
+        <QuickMatchLink communityId={id} onlyOffline />
         <Link href={`/c/${id}/community`} className="card" aria-label={`Open the community page for ${community.name}`}>
           <div className="row">
             <CommunityLogo name={community.name} />
@@ -57,16 +65,33 @@ export default async function CommunityHome({ params }: { params: Promise<{ id: 
           </Link>
         )}
 
-        {next ? (
-          <section className="card">
-            <small className="muted">Next match</small>
-            <Link href={`/c/${id}/matches/${next.id}`} style={{ display: "block", margin: "4px 0 10px" }}>
-              <b style={{ fontSize: "1.1rem" }}>{next.side1_name} v {next.side2_name}</b>
-              <small className="muted" style={{ display: "block" }}>{formatWhen(next.scheduled_at, tz)}{next.venue ? ` · ${next.venue}` : ""} · {next.overs} overs</small>
-              <small className="muted" style={{ display: "block" }}><Counts m={next} /></small>
-            </Link>
-            <ReplyButtons communityId={id} m={next} next="home" />
+        {today ? (
+          <section className="card gold" aria-label="Match day">
+            <small className="muted">Match day · {formatWhen(today.scheduled_at, tz)}</small>
+            <b style={{ display: "block", fontSize: "1.2rem", margin: "2px 0 8px" }}>{today.side1_name} v {today.side2_name}</b>
+            <small className="muted" style={{ display: "block" }}>{today.venue ? `${today.venue} · ` : ""}{today.overs} overs · {today.players_per_side} a side</small>
+            <div className="two" style={{ marginTop: 10 }}>
+              {([1, 2] as const).map((pos) => {
+                const side = todayLineup.filter((l) => l.position === pos);
+                return (
+                  <div key={pos}>
+                    <b>{pos === 1 ? today.side1_name : today.side2_name} <small className="muted">({side.length})</small></b>
+                    <div className="muted small" style={{ lineHeight: 1.5 }}>{side.length ? side.map((l) => l.name).join(", ") : "No lineup yet"}</div>
+                  </div>
+                );
+              })}
+            </div>
+            <div className="two" style={{ marginTop: 12 }}>
+              <Link href={`/c/${id}/matches/${today.id}/score`} className="btn gold small" style={{ width: "100%" }}>Start scoring</Link>
+              <Link href={`/c/${id}/matches/${today.id}/lineup`} className="btn ghost small" style={{ width: "100%" }}>Pick lineups</Link>
+            </div>
+            <Link href={`/c/${id}/matches/${today.id}#toss`} className="chip" style={{ marginTop: 10 }}>Toss the coin</Link>
           </section>
+        ) : next ? (
+          <Link href={`/c/${id}/matches/${next.id}`} className="card row space" aria-label="Next match">
+            <span className="t grow"><small className="muted">Next match</small><b style={{ display: "block" }}>{next.side1_name} v {next.side2_name}</b><small className="muted">{formatWhen(next.scheduled_at, tz)}</small></span>
+            <span className={`chip${next.my_answer ? " green" : " gold"}`}>{next.my_answer === "in" ? "You are in" : next.my_answer === "out" ? "You are out" : "Reply"} ›</span>
+          </Link>
         ) : (
           <section className="card center muted">No match planned yet. Create one and everyone is asked if they are coming.</section>
         )}

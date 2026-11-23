@@ -175,7 +175,7 @@ export default async function MatchPage({ params, searchParams }: { params: Prom
           <p className="muted small" style={{ margin: "10px 0 0" }}>Guest figures stay on this match&rsquo;s scorecard until a guest is linked to a member. The permanent squads are never changed by a lineup.</p>
         </section>
 
-        <section className="card">
+        <section className="card" id="toss">
           <h2 style={{ fontSize: "1rem" }}>Toss and batting order</h2>
           {m.toss_winner_side && m.toss_decision ? (
             <p style={{ margin: "6px 0 10px" }}>

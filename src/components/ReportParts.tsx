@@ -5,16 +5,16 @@ import { oversText } from "@/lib/engine/engine";
 import type { MatchState } from "@/lib/engine/types";
 import { POM_POINTS, computeMatchStats, matchFigures, oversSummary, partnershipsOf } from "@/lib/stats";
 
-type Common = { m: MatchState; communityId: string | null };   // null = public view: no links into the community
+type Common = { m: MatchState; communityId: string | null; matchId?: string };   // null = public view: no links into the community
 
-export function PlayerName({ m, id, communityId }: { m: MatchState; id: string; communityId: string | null }) {
+export function PlayerName({ m, id, communityId, matchId }: { m: MatchState; id: string; communityId: string | null; matchId?: string }) {
   const p = m.players[id];
   if (!p) return <>Player</>;
-  return p.userId && communityId ? <Link href={`/c/${communityId}/players/${p.userId}`} style={{ textDecoration: "underline", textDecorationColor: "var(--line)" }}>{p.name}</Link> : <>{p.name}{p.kind === "guest" ? " (guest)" : ""}</>;
+  return p.userId && communityId ? <Link href={`/c/${communityId}/players/${p.userId}${matchId ? `?match=${matchId}` : ""}`} style={{ textDecoration: "underline", textDecorationColor: "var(--line)" }}>{p.name}</Link> : <>{p.name}{p.kind === "guest" ? " (guest)" : ""}</>;
 }
 
 /** The Player of the Match and the "i" panel that explains, in plain words, how the app chose. */
-export function PomCard({ m, communityId }: Common) {
+export function PomCard({ m, communityId, matchId }: Common) {
   const { pom, players } = computeMatchStats(m);
   if (!pom) {
     return (
@@ -32,7 +32,7 @@ export function PomCard({ m, communityId }: Common) {
       </div>
       {winners.map((w) => (
         <div key={w.entryId} style={{ marginTop: 8 }}>
-          <span style={{ fontSize: "1.2rem", fontWeight: 800 }}><PlayerName m={m} id={w.entryId} communityId={communityId} /></span>
+          <span style={{ fontSize: "1.2rem", fontWeight: 800 }}><PlayerName m={m} id={w.entryId} communityId={communityId} matchId={matchId} /></span>
           <span className="muted"> · {w.points} points{m.players[w.entryId]?.kind === "guest" ? " · guest (shown here; not counted in a career unless linked)" : ""}</span>
           <div className="muted small">{(pom.breakdown[w.entryId] ?? []).map((x) => `${x.label} ${x.points > 0 ? "+" : ""}${x.points}`).join(" · ")}</div>
         </div>
@@ -62,7 +62,7 @@ export function PomCard({ m, communityId }: Common) {
   );
 }
 
-export function SummaryTab({ m, communityId, scorers, createdBy }: Common & { scorers: { name: string; balls: number }[]; createdBy: string | null }) {
+export function SummaryTab({ m, communityId, matchId, scorers, createdBy }: Common & { scorers: { name: string; balls: number }[]; createdBy: string | null }) {
   const f = matchFigures(m);
   const regular = m.innings.filter((i) => !i.superOver);
   return (
@@ -79,17 +79,17 @@ export function SummaryTab({ m, communityId, scorers, createdBy }: Common & { sc
           {scorers.length > 0 && <> · Scored by <b style={{ color: "var(--white)" }}>{scorers.map((s) => `${s.name} (${s.balls} ball${s.balls === 1 ? "" : "s"})`).join(", ")}</b></>}
         </p>
       </section>
-      <PomCard m={m} communityId={communityId} />
+      <PomCard m={m} communityId={communityId} matchId={matchId} />
       <section className="card">
         <b>Top performers</b>
         <div className="list" style={{ marginTop: 6 }}>
           {f.topBatters.map((p) => {
             const runs = p.bat.reduce((a, b) => a + b.runs, 0), balls = p.bat.reduce((a, b) => a + b.balls, 0);
-            return <div key={`b${p.entryId}`} className="item space"><span><PlayerName m={m} id={p.entryId} communityId={communityId} /> <small className="muted">{m.sides[p.side - 1]}</small></span><b>{runs} ({balls})</b></div>;
+            return <div key={`b${p.entryId}`} className="item space"><span><PlayerName m={m} id={p.entryId} communityId={communityId} matchId={matchId} /> <small className="muted">{m.sides[p.side - 1]}</small></span><b>{runs} ({balls})</b></div>;
           })}
           {f.topBowlers.map((p) => {
             const w = p.bowl.reduce((a, b) => a + b.wickets, 0), r = p.bowl.reduce((a, b) => a + b.runs, 0), balls = p.bowl.reduce((a, b) => a + b.balls, 0);
-            return <div key={`w${p.entryId}`} className="item space"><span><PlayerName m={m} id={p.entryId} communityId={communityId} /> <small className="muted">{m.sides[p.side - 1]}</small></span><b>{w}/{r} <small className="muted">({oversText(balls, m.rules.ballsPerOver)} ov)</small></b></div>;
+            return <div key={`w${p.entryId}`} className="item space"><span><PlayerName m={m} id={p.entryId} communityId={communityId} matchId={matchId} /> <small className="muted">{m.sides[p.side - 1]}</small></span><b>{w}/{r} <small className="muted">({oversText(balls, m.rules.ballsPerOver)} ov)</small></b></div>;
           })}
         </div>
       </section>
@@ -97,7 +97,7 @@ export function SummaryTab({ m, communityId, scorers, createdBy }: Common & { sc
   );
 }
 
-export function ScorecardTab({ m, communityId }: Common) {
+export function ScorecardTab({ m, communityId, matchId }: Common) {
   return (
     <div className="stack">
       <Scorecard m={m} />
@@ -110,7 +110,7 @@ export function ScorecardTab({ m, communityId }: Common) {
             <div className="list" style={{ marginTop: 6 }}>
               {parts.map((p, i) => (
                 <div key={i} className="item space">
-                  <span><PlayerName m={m} id={p.a} communityId={communityId} />{p.b && <> &amp; <PlayerName m={m} id={p.b} communityId={communityId} /></>}</span>
+                  <span><PlayerName m={m} id={p.a} communityId={communityId} matchId={matchId} />{p.b && <> &amp; <PlayerName m={m} id={p.b} communityId={communityId} matchId={matchId} /></>}</span>
                   <b>{p.runs} <small className="muted">({p.balls})</small></b>
                 </div>
               ))}
@@ -172,7 +172,7 @@ export function OversTab({ m }: { m: MatchState }) {
   );
 }
 
-export function StatsTab({ m, communityId }: Common) {
+export function StatsTab({ m, communityId, matchId }: Common) {
   const f = matchFigures(m);
   const regular = m.innings.filter((i) => !i.superOver);
   const bpo = m.rules.ballsPerOver;
@@ -192,15 +192,15 @@ export function StatsTab({ m, communityId }: Common) {
         <b>Best partnerships</b>
         <div className="list" style={{ marginTop: 6 }}>
           {f.bestPartnerships.map((p, i) => (
-            <div key={i} className="item space"><span><PlayerName m={m} id={p.a} communityId={communityId} />{p.b && <> &amp; <PlayerName m={m} id={p.b} communityId={communityId} /></>}</span><b>{p.runs} <small className="muted">({p.balls})</small></b></div>
+            <div key={i} className="item space"><span><PlayerName m={m} id={p.a} communityId={communityId} matchId={matchId} />{p.b && <> &amp; <PlayerName m={m} id={p.b} communityId={communityId} matchId={matchId} /></>}</span><b>{p.runs} <small className="muted">({p.balls})</small></b></div>
           ))}
         </div>
       </section>
       <section className="card">
         <b>Top batters and bowlers</b>
         <div className="list" style={{ marginTop: 6 }}>
-          {f.topBatters.map((p) => <div key={`b${p.entryId}`} className="item space"><span><PlayerName m={m} id={p.entryId} communityId={communityId} /></span><b>{p.bat.reduce((a, b) => a + b.runs, 0)} ({p.bat.reduce((a, b) => a + b.balls, 0)})</b></div>)}
-          {f.topBowlers.map((p) => <div key={`w${p.entryId}`} className="item space"><span><PlayerName m={m} id={p.entryId} communityId={communityId} /></span><b>{p.bowl.reduce((a, b) => a + b.wickets, 0)}/{p.bowl.reduce((a, b) => a + b.runs, 0)}</b></div>)}
+          {f.topBatters.map((p) => <div key={`b${p.entryId}`} className="item space"><span><PlayerName m={m} id={p.entryId} communityId={communityId} matchId={matchId} /></span><b>{p.bat.reduce((a, b) => a + b.runs, 0)} ({p.bat.reduce((a, b) => a + b.balls, 0)})</b></div>)}
+          {f.topBowlers.map((p) => <div key={`w${p.entryId}`} className="item space"><span><PlayerName m={m} id={p.entryId} communityId={communityId} matchId={matchId} /></span><b>{p.bowl.reduce((a, b) => a + b.wickets, 0)}/{p.bowl.reduce((a, b) => a + b.runs, 0)}</b></div>)}
         </div>
       </section>
     </div>

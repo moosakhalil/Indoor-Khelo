@@ -128,7 +128,7 @@ export default function ScoringPad(props: PadProps) {
       setReady(true);
       setOnline(typeof navigator === "undefined" ? true : navigator.onLine);
       void protectStorage().then((s) => alive && setStorage(s));
-      if (props.scorerDevice === null) void lockAction(communityId, matchId, "claim", deviceId());
+      if (props.scorerDevice === null) void lockAction(communityId, matchId, "claim", deviceId()).catch(() => undefined);
       if (store.current.pending.some((i) => i.status === "pending")) void flush();
     })();
     return () => { alive = false; };

@@ -8,7 +8,7 @@ import { DEFAULT_RULES } from "@/lib/matchRules";
 import { createMatch } from "@/lib/matches";
 import {
   addPayment, createBooking, createVenue, deleteBooking, deletePayment, deleteVenue, getBooking, linkMatches, linkedMatches, listBookings, listHistory, listPayments, listSharing, listVenues,
-  moneyView, remindUnpaid, setBookingStatus, setSharing, updateBooking, updatePayment, updateVenue, verifyPayment,
+  moneyView, myPayments, remindUnpaid, setBookingStatus, setSharing, updateBooking, updatePayment, updateVenue, verifyPayment,
 } from "@/lib/bookings";
 import type { PaymentInput } from "@/lib/payments";
 
@@ -252,6 +252,34 @@ describe.skipIf(!run)("Phase 7: venues, bookings and money in the real database"
     expect((await listPayments(w.bookingId))[0]).toMatchObject({ payer_name: "TEST leaver", amount: 800 });
     const row = (await listBookings(w.id)).find((b) => b.id === w.bookingId)!;
     expect(row).toMatchObject({ contributed: 800, member_count: 1, total_cost: 5000 });
+  });
+
+  it("my payments: what I paid and my suggested share across bookings, with a cancelled booking suggesting nothing", { timeout: 180_000 }, async () => {
+    const w = await newBooking(6000);
+    const me = w.people[2]!;
+    const other = await newBooking(3000);
+    const base = await myPayments(w.id, me);                                            // this person may already have records from other tests in the shared community
+    const [a, b] = [w.people[1]!, w.people[3]!];
+    await setSharing(w.admin, w.id, w.bookingId, [me, a, b], []);                       // 3 people: share 2000
+    await addPayment(w.admin, w.id, w.bookingId, randomUUID(), pay(me, 500));
+    const pid = randomUUID();
+    await addPayment(w.admin, w.id, w.bookingId, pid, pay(me, 700));
+    await verifyPayment(a, w.id, w.bookingId, pid, true);
+    let mine = await myPayments(w.id, me);
+    const row = mine.rows.find((r) => r.bookingId === w.bookingId)!;
+    expect(row).toMatchObject({ share: 2000, paid: 1200, checked: 700, owner: "member" });
+    expect(mine.paid - base.paid).toBe(1200);
+    expect(mine.stillSuggested - base.stillSuggested).toBe(800);                       // 2000 - 1200
+    expect(await myPayments(w.id, await newUser("nobody"))).toEqual({ rows: [], paid: 0, stillSuggested: 0 });
+    // paying for others, without being in the list, still shows
+    await addPayment(w.admin, w.id, w.bookingId, randomUUID(), pay(w.people[4]!, 900));
+    expect((await myPayments(w.id, w.people[4]!)).rows[0]).toMatchObject({ owner: "payer", paid: 900, share: 0 });
+    // a cancelled booking suggests nothing more
+    await setBookingStatus(w.admin, w.id, w.bookingId, "cancelled");
+    mine = await myPayments(w.id, me);
+    expect(mine.stillSuggested).toBe(base.stillSuggested);                              // the cancelled booking adds nothing to what is suggested
+    expect(mine.paid - base.paid).toBe(1200);
+    void other;
   });
 
   it("the database refuses what the app should never send", { timeout: 120_000 }, async () => {

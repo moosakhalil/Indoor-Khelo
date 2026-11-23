@@ -385,3 +385,28 @@ export async function remindUnpaid(userId: string, communityId: string, id: stri
   });
 }
 export { BOOKING_LABEL };
+
+
+/* ---------- my payments: what I paid and my suggested share, across the community's bookings ---------- */
+export type MyPaymentRow = { bookingId: string; venue: string; starts_at: Date; status: BookingStatus; total: number; share: number; paid: number; checked: number; owner: "member" | "payer" };
+
+export async function myPayments(communityId: string, userId: string): Promise<{ rows: MyPaymentRow[]; paid: number; stillSuggested: number }> {
+  const rows = await query<{ id: string; venue: string; starts_at: Date; status: BookingStatus; total_cost: number; people: number; in_list: boolean; paid: number; checked: number }>(
+    `select b.id, v.name as venue, b.starts_at, b.status, b.total_cost,
+            (select count(*)::int from booking_member m where m.booking_id = b.id) as people,
+            exists (select 1 from booking_member m where m.booking_id = b.id and m.user_id = $2) as in_list,
+            coalesce((select sum(case when p.kind = 'payment' then p.amount else -p.amount end) from booking_payment p where p.booking_id = b.id and p.payer_user_id = $2), 0)::int as paid,
+            coalesce((select sum(case when p.kind = 'payment' then p.amount else -p.amount end) from booking_payment p where p.booking_id = b.id and p.payer_user_id = $2 and p.verified_at is not null), 0)::int as checked
+       from booking b join venue v on v.id = b.venue_id
+      where b.community_id = $1
+        and (exists (select 1 from booking_member m where m.booking_id = b.id and m.user_id = $2)
+          or exists (select 1 from booking_payment p where p.booking_id = b.id and p.payer_user_id = $2))
+      order by b.starts_at desc`, [communityId, userId]);
+  const out: MyPaymentRow[] = rows.map((r) => ({
+    bookingId: r.id, venue: r.venue, starts_at: r.starts_at, status: r.status, total: r.total_cost,
+    share: r.in_list ? suggestedShare(r.total_cost, r.people) : 0, paid: r.paid, checked: r.checked, owner: r.in_list ? "member" : "payer",
+  }));
+  // a cancelled booking has nothing left to suggest
+  const stillSuggested = out.filter((r) => r.status !== "cancelled" && r.share > 0).reduce((a, r) => a + Math.max(0, r.share - Math.max(0, r.paid)), 0);
+  return { rows: out, paid: out.reduce((a, r) => a + r.paid, 0), stillSuggested };
+}

@@ -44,7 +44,7 @@ export function MatchCard({ communityId, m, tz }: { communityId: string; m: Matc
       <small className="muted" style={{ display: "block" }}>{formatWhen(m.scheduled_at, tz)}{m.venue ? ` · ${m.venue}` : ""} · {m.overs} overs</small>
       {["draft", "scheduled", "postponed"].includes(m.status) && (
         <small className="muted" style={{ display: "block", marginTop: 4 }}>
-          <Counts m={m} />{m.my_answer ? ` · You: ${m.my_answer === "in" ? "I’m in" : "Can’t make it"}` : " · You: no reply"}
+          {m.my_answer ? `You: ${m.my_answer === "in" ? "I’m in" : "Can’t make it"}` : "You have not replied"}
         </small>
       )}
     </Link>

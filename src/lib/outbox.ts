@@ -2,9 +2,10 @@
 // Phase 5: the scorer's phone keeps every ball on the device first (IndexedDB) and sends them to the server in order.
 // Nothing is dropped: a ball leaves this store only after the server has confirmed it (or the scorer chooses to discard a refused one).
 import type { ScoreEvent } from "@/lib/engine/types";
+import type { QuickMatchWire, Roster } from "@/lib/quickMatchRules";
 
 const DB_NAME = "indoor-khelo";
-const DB_VERSION = 2;
+const DB_VERSION = 3;
 
 export type OutboxItem = { id: string; communityId: string; matchId: string; seq: number; event: ScoreEvent; status: "pending" | "rejected" | "blocked"; reason: string | null };
 export type CachedMatch = { matchId: string; events: ScoreEvent[]; savedAt: number };
@@ -20,6 +21,11 @@ function open(): Promise<IDBDatabase> {
         s.createIndex("matchId", "matchId");
       }
       if (!db.objectStoreNames.contains("matches")) db.createObjectStore("matches", { keyPath: "matchId" });
+      if (!db.objectStoreNames.contains("rosters")) db.createObjectStore("rosters", { keyPath: "communityId" });
+      if (!db.objectStoreNames.contains("newMatches")) {
+        const n = db.createObjectStore("newMatches", { keyPath: "id" });
+        n.createIndex("communityId", "communityId");
+      }
       if (!db.objectStoreNames.contains("payments")) {
         const p = db.createObjectStore("payments", { keyPath: "id" });
         p.createIndex("bookingId", "bookingId");
@@ -133,8 +139,80 @@ export async function flushPayments(): Promise<{ sent: number; left: number }> {
   } finally { sendingPayments = false; }
 }
 
-/** Send whatever is waiting (balls and payment records), wherever in the app the person is. Used when the app opens and when the signal returns. */
+/* ---------- the community's players, kept on the phone ---------- */
+export async function saveRoster(r: Roster): Promise<boolean> {
+  try { await run("rosters", "readwrite", (s) => s.put(r)); return true; } catch { return false; }
+}
+export async function readRoster(communityId: string): Promise<Roster | null> {
+  try { return ((await run<Roster>("rosters", "readonly", (s) => s.get(communityId))) as Roster | undefined) ?? null; } catch { return null; }
+}
+
+/* ---------- matches made with no signal ---------- */
+export type NewMatchItem = {
+  id: string; communityId: string; createdAt: number;
+  status: "pending" | "synced" | "refused"; reason: string | null;
+  match: QuickMatchWire;                                         // exactly what is sent to the server
+  names: Record<string, { name: string; number: number | null }>;   // lineup entry id -> name and number, to draw the scoring screen offline
+};
+
+export async function saveNewMatch(item: NewMatchItem): Promise<boolean> {
+  try { await run("newMatches", "readwrite", (s) => s.put(item)); return true; } catch { return false; }
+}
+export async function readNewMatch(id: string): Promise<NewMatchItem | null> {
+  try { return ((await run<NewMatchItem>("newMatches", "readonly", (s) => s.get(id))) as NewMatchItem | undefined) ?? null; } catch { return null; }
+}
+export async function readNewMatches(): Promise<NewMatchItem[]> {
+  try { return ((await run<NewMatchItem[]>("newMatches", "readonly", (s) => s.getAll())) ?? []).sort((a, b) => a.createdAt - b.createdAt); } catch { return []; }
+}
+
+export type NewMatchSend = { kind: "created" | "duplicate" } | { kind: "offline" } | { kind: "signin" } | { kind: "refused"; message: string };
+
+/** One match to the server. The ids were made on the phone, so sending it twice is harmless. */
+export async function sendNewMatch(item: NewMatchItem): Promise<NewMatchSend> {
+  if (typeof navigator !== "undefined" && navigator.onLine === false) return { kind: "offline" };
+  let res: Response;
+  try {
+    res = await fetch("/api/matches/create", {
+      method: "POST", headers: { "content-type": "application/json" }, credentials: "same-origin", cache: "no-store",
+      body: JSON.stringify({ communityId: item.communityId, deviceId: deviceId(), match: item.match }),
+    });
+  } catch { return { kind: "offline" }; }
+  if (res.redirected || res.status === 401 || !(res.headers.get("content-type") ?? "").includes("json")) return { kind: "signin" };
+  const body = (await res.json().catch(() => ({}))) as { ok?: boolean; duplicate?: boolean; message?: string };
+  if (res.ok && body.ok) return { kind: body.duplicate ? "duplicate" : "created" };
+  if (res.status >= 500) return { kind: "offline" };          // the server is having a problem: keep it and try again later
+  return { kind: "refused", message: body.message ?? "The server did not accept this match." };
+}
+
+/** Create one waiting match on the server. A refusal is kept with its reason, never dropped. Returns true when the match exists on the server. */
+async function createOne(item: NewMatchItem): Promise<{ ok: true } | { ok: false; why: "offline" | "signin" | "refused"; message: string }> {
+  if (item.status === "synced") return { ok: true };
+  if (item.status === "refused") return { ok: false, why: "refused", message: item.reason ?? "The server did not accept this match." };
+  const r = await sendNewMatch(item);
+  if (r.kind === "created" || r.kind === "duplicate") { await saveNewMatch({ ...item, status: "synced", reason: null }); return { ok: true }; }
+  if (r.kind === "refused") { await saveNewMatch({ ...item, status: "refused", reason: r.message }); return { ok: false, why: "refused", message: r.message }; }
+  return { ok: false, why: r.kind, message: "" };
+}
+
+let creating = false;
+/** Create every match that was set up with no signal, oldest first. */
+export async function createPendingMatches(): Promise<{ created: number; left: number }> {
+  if (creating) return { created: 0, left: -1 };
+  creating = true;
+  let created = 0;
+  try {
+    for (const item of (await readNewMatches()).filter((i) => i.status === "pending")) {
+      const r = await createOne(item);
+      if (r.ok) created++;
+      else if (r.why !== "refused") break;     // offline or signed out: stop and try again later
+    }
+    return { created, left: (await readNewMatches()).filter((i) => i.status === "pending").length };
+  } finally { creating = false; }
+}
+
+/** Send whatever is waiting (new matches, balls and payment records), wherever in the app the person is. Used when the app opens and when the signal returns. */
 export async function flushAllWaiting(): Promise<void> {
+  await createPendingMatches();
   for (const w of await matchesWithWaiting()) await flushMatch(w.communityId, w.matchId);
   await flushPayments();
 }
@@ -180,6 +258,15 @@ export async function flushMatch(communityId: string, matchId: string): Promise<
     const waiting = (await readOutbox(matchId)).filter((i) => i.status === "pending");
     if (!waiting.length) return { kind: "empty" };
     if (typeof navigator !== "undefined" && navigator.onLine === false) return { kind: "offline" };
+    const quick = await readNewMatch(matchId);
+    if (quick && quick.status !== "synced") {
+      const made = await createOne(quick);
+      if (!made.ok) {
+        if (made.why === "offline") return { kind: "offline" };
+        if (made.why === "signin") return { kind: "signin" };
+        return { kind: "error", message: `This match could not be created on the server: ${made.message} Your balls are safe on this phone.` };
+      }
+    }
     let res: Response;
     try {
       res = await fetch(`/api/matches/${matchId}/events`, {

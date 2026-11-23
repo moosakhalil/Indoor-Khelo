@@ -41,6 +41,7 @@ export default async function ProfilePage({ params }: { params: Promise<{ id: st
           ))}
         </section>
         <Link href={`/c/${id}/profile/edit`} className="btn gold">Edit my profile</Link>
+        <Link href={`/c/${id}/profile/payments`} className="btn ghost">My payments</Link>
         <Link href={`/c/${id}/players/${user.id}`} className="btn ghost">See how others see me</Link>
 
         <section className="card" id="share">

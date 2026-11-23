@@ -5,6 +5,7 @@ import Frame from "@/components/Frame";
 import PlayerStats, { STAT_TABS, type StatTab } from "@/components/PlayerStats";
 import Shirt from "@/components/Shirt";
 import { careerOf } from "@/lib/career";
+import { isUuid } from "@/lib/community";
 import { requireMember } from "@/lib/community";
 import { getPlayerInCommunity } from "@/lib/profile";
 import { playerLines } from "@/lib/reports";
@@ -17,7 +18,7 @@ export const metadata: Metadata = { title: "Player" };
 export const dynamic = "force-dynamic";
 
 const DATE = /^\d{4}-\d{2}-\d{2}$/;
-type Q = { tab?: string; lines?: string; scope?: string; team?: string; from?: string; to?: string; series?: string };
+type Q = { match?: string; tab?: string; lines?: string; scope?: string; team?: string; from?: string; to?: string; series?: string };
 
 export default async function PlayerPage({ params, searchParams }: { params: Promise<{ id: string; userId: string }>; searchParams: Promise<Q> }) {
   const { id, userId } = await params;
@@ -38,6 +39,8 @@ export default async function PlayerPage({ params, searchParams }: { params: Pro
   const hasFilters = !!(from || to || teamId || allCommunities || seriesId);
   const lines = await playerLines(id, userId, { allCommunities, teamId, from, to, seriesId });
   const career = careerOf(lines);
+  // opened from a scorecard: this match's figures come first
+  const fromMatch = q.match && isUuid(q.match) ? (await playerLines(id, userId, {})).find((l) => l.matchId === q.match) ?? null : null;
   const tab: StatTab = STAT_TABS.some(([k]) => k === q.tab) ? (q.tab as StatTab) : "overview";
   const linesFilter = q.lines === "bat" || q.lines === "bowl" ? q.lines : "all";
   const keep = new URLSearchParams();
@@ -75,6 +78,20 @@ export default async function PlayerPage({ params, searchParams }: { params: Pro
             </span>
           </div>
         </section>
+
+        {fromMatch && (
+          <section className="card" style={{ borderColor: "var(--gold)" }} aria-label="This match">
+            <div className="row space"><b>In this match</b><Link href={`/c/${id}/matches/${fromMatch.matchId}/report`} className="chip">Open the match ›</Link></div>
+            <p className="muted small" style={{ margin: "4px 0 0" }}>{fromMatch.teamName} v {fromMatch.opponent}{fromMatch.numberUsed !== null ? ` · wore #${fromMatch.numberUsed}` : ""}</p>
+            <div className="list" style={{ marginTop: 6 }}>
+              <div className="item space"><span className="muted">Batting</span><b>{fromMatch.bat.length ? fromMatch.bat.map((x) => `${x.runs}${x.out ? "" : "*"} (${x.balls}) ${x.fours}×4 ${x.sixes}×6`).join(", ") : "did not bat"}</b></div>
+              <div className="item space"><span className="muted">Bowling</span><b>{fromMatch.bowl.length ? fromMatch.bowl.map((x) => `${x.wickets}/${x.runs} (${Math.floor(x.balls / fromMatch.ballsPerOver)}.${x.balls % fromMatch.ballsPerOver} ov)`).join(", ") : "did not bowl"}</b></div>
+              <div className="item space"><span className="muted">Fielding</span><b>{fromMatch.field.catches + fromMatch.field.caughtBowled} catches, {fromMatch.field.runOuts} run-outs, {fromMatch.field.stumpings} stumpings</b></div>
+              <div className="item space"><span className="muted">Player of the Match points</span><b>{fromMatch.points}{fromMatch.pom ? " · Player of the Match" : ""}</b></div>
+            </div>
+            <p className="muted small" style={{ margin: "8px 0 0" }}>Career figures are below.</p>
+          </section>
+        )}
 
         <form method="get" className="card" aria-label="Filter the statistics">
           <input type="hidden" name="tab" value={tab} />

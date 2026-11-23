@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import CopyButton from "@/components/CopyButton";
+import PdfActions from "@/components/PdfActions";
 import Frame from "@/components/Frame";
 import { WinTab, WormTab } from "@/components/AnalyticsParts";
 import { BallsTab, ChangesTab, OversTab, ScorecardTab, StatsTab, SummaryTab } from "@/components/ReportParts";
@@ -48,8 +49,8 @@ export default async function ReportPage({ params, searchParams }: { params: Pro
         <nav className="row wrap" aria-label="Report sections">
           {TABS.map(([k, label]) => <Link key={k} href={`/c/${id}/matches/${matchId}/report?tab=${k}`} className={`chip${tab === k ? " gold" : ""}`} aria-current={tab === k ? "page" : undefined}>{label}</Link>)}
         </nav>
-        {tab === "summary" && <SummaryTab m={m} communityId={id} scorers={scorers} createdBy={match.created_by_name} />}
-        {tab === "scorecard" && <ScorecardTab m={m} communityId={id} />}
+        {tab === "summary" && <SummaryTab m={m} communityId={id} matchId={matchId} scorers={scorers} createdBy={match.created_by_name} />}
+        {tab === "scorecard" && <ScorecardTab m={m} communityId={id} matchId={matchId} />}
         {tab === "balls" && (
           <>
             <p className="muted small" style={{ margin: 0 }}>Every delivery, in order. Spotted a mistake? Tap Correct on that ball: any member can, and the change is logged with their name.</p>
@@ -57,10 +58,15 @@ export default async function ReportPage({ params, searchParams }: { params: Pro
           </>
         )}
         {tab === "overs" && <OversTab m={m} />}
-        {tab === "stats" && <StatsTab m={m} communityId={id} />}
+        {tab === "stats" && <StatsTab m={m} communityId={id} matchId={matchId} />}
         {tab === "worm" && <WormTab m={m} />}
         {tab === "win" && <WinTab m={m} />}
         {tab === "changes" && <ChangesTab m={m} />}
+        <section className="card" id="pdf">
+          <b>PDF</b>
+          <p className="muted small" style={{ margin: "4px 0 10px" }}>Open it, save it, or send it to WhatsApp or another app.</p>
+          <PdfActions pdfBase={`/api/matches/${matchId}/pdf?communityId=${id}`} shareUrl={token ? `${origin}/r/${token}` : link} title={`${match.side1_name} v ${match.side2_name}`} fileName={`${match.side1_name}-v-${match.side2_name}.pdf`.replace(/[^A-Za-z0-9.-]+/g, "-")} />
+        </section>
         <section className="card" id="share">
           <b>Share this report</b>
           {token ? (
