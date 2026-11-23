@@ -3,10 +3,11 @@
 import Link from "next/link";
 import { useState } from "react";
 import Shirt from "@/components/Shirt";
+import { PLAYING_ROLES, labelOf } from "@/lib/validation";
 
-type M = { user_id: string; name: string; role: "admin" | "member"; player_number: number | null };
+type M = { user_id: string; name: string; role: "admin" | "member"; player_number: number | null; playing_role: string | null };
 
-/** Search by name or number. The Admin sees an arrow to manage each person. */
+/** Search by name or number. Tap anyone to open their player page. */
 export default function MembersList({ members, meId, isAdmin, communityId }: { members: M[]; meId: string; isAdmin: boolean; communityId: string }) {
   const [q, setQ] = useState("");
   const [filter, setFilter] = useState<"all" | "admin">("all");
@@ -27,21 +28,20 @@ export default function MembersList({ members, meId, isAdmin, communityId }: { m
       <section className="card list">
         {shown.length === 0 && <div className="item muted">No one matches.</div>}
         {shown.map((m) => {
-          const inner = (
-            <>
+          const role = labelOf(PLAYING_ROLES, m.playing_role);
+          return (
+            <Link key={m.user_id} href={`/c/${communityId}/players/${m.user_id}`} className="item" aria-label={`Open ${m.name}`}>
               <Shirt number={m.player_number} />
-              <span className="t grow"><b>{m.name}{m.user_id === meId ? " (you)" : ""}</b>{m.role === "admin" && <small>Admin</small>}</span>
-              {isAdmin && <span aria-hidden="true">›</span>}
-            </>
-          );
-          return isAdmin ? (
-            <Link key={m.user_id} href={`/c/${communityId}/members/${m.user_id}`} className="item" aria-label={`Manage ${m.name}`}>{inner}</Link>
-          ) : (
-            <div key={m.user_id} className="item">{inner}</div>
+              <span className="t grow">
+                <b>{m.name}{m.user_id === meId ? " (you)" : ""}</b>
+                {(m.role === "admin" || role) && <small>{[m.role === "admin" ? "Admin" : null, role].filter(Boolean).join(" · ")}</small>}
+              </span>
+              <span aria-hidden="true">›</span>
+            </Link>
           );
         })}
       </section>
-      {isAdmin && <p className="muted small" style={{ margin: "0 2px" }}>As an Admin you can tap a person to make them Admin, ask for a new number, or remove them.</p>}
+      <p className="muted small" style={{ margin: "0 2px" }}>Tap a player to see their profile.{isAdmin ? " As an Admin you can manage them from there." : ""}</p>
     </div>
   );
 }

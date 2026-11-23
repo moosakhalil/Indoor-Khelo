@@ -116,3 +116,87 @@ export function ordinal(n: number): string {
 function clean(v: unknown): string {
   return typeof v === "string" ? v.replace(/\s+/g, " ").trim() : "";
 }
+
+/* ---------- player profile (Phase 3). One profile per person, shown in every community. ---------- */
+
+export const BATTING_HANDS = [
+  { value: "right", label: "Right-hand" },
+  { value: "left", label: "Left-hand" },
+] as const;
+export const BATTING_POSITIONS = [
+  { value: "opener", label: "Opener" },
+  { value: "top_order", label: "Top order" },
+  { value: "middle_order", label: "Middle order" },
+  { value: "finisher", label: "Finisher" },
+] as const;
+export const BOWLING_STYLES = [
+  { value: "right_fast", label: "Right-arm fast" },
+  { value: "right_medium", label: "Right-arm medium" },
+  { value: "right_spin", label: "Right-arm spin" },
+  { value: "left_fast", label: "Left-arm fast" },
+  { value: "left_medium", label: "Left-arm medium" },
+  { value: "left_spin", label: "Left-arm spin" },
+  { value: "none", label: "Doesn’t bowl" },
+] as const;
+export const PLAYING_ROLES = [
+  { value: "batter", label: "Batter" },
+  { value: "bowler", label: "Bowler" },
+  { value: "all_rounder", label: "All-rounder" },
+  { value: "wicket_keeper", label: "Wicket-keeper" },
+] as const;
+
+type Option = { value: string; label: string };
+const has = (list: readonly Option[], v: unknown): v is string => typeof v === "string" && list.some((o) => o.value === v);
+export const labelOf = (list: readonly Option[], v: string | null | undefined): string | null => list.find((o) => o.value === v)?.label ?? null;
+
+export type ProfileInput = {
+  name: string;
+  battingHand: string | null;
+  battingPosition: string | null;
+  bowlingStyle: string | null;
+  playingRole: string | null;
+};
+
+/** An empty choice means "not set yet". A value that is not on the list is refused. */
+export function validateProfileInput(raw: Record<string, unknown>): { ok: true; value: ProfileInput } | { ok: false; error: string } {
+  const name = validatePersonName(raw.name);
+  if (!name.ok) return { ok: false, error: name.error };
+  const pick = (key: string, list: readonly Option[], label: string): { ok: true; v: string | null } | { ok: false; error: string } => {
+    const v = raw[key];
+    if (v === undefined || v === null || v === "") return { ok: true, v: null };
+    if (!has(list, v)) return { ok: false, error: `Please choose a ${label} from the list.` };
+    return { ok: true, v };
+  };
+  const hand = pick("battingHand", BATTING_HANDS, "batting hand");
+  if (!hand.ok) return hand;
+  const pos = pick("battingPosition", BATTING_POSITIONS, "batting position");
+  if (!pos.ok) return pos;
+  const bowl = pick("bowlingStyle", BOWLING_STYLES, "bowling style");
+  if (!bowl.ok) return bowl;
+  const role = pick("playingRole", PLAYING_ROLES, "playing role");
+  if (!role.ok) return role;
+  return { ok: true, value: { name: name.value, battingHand: hand.v, battingPosition: pos.v, bowlingStyle: bowl.v, playingRole: role.v } };
+}
+
+/* ---------- teams ---------- */
+export const TEAM_NAME_MIN = 2;
+export const TEAM_NAME_MAX = 40;
+export const TEAM_DESCRIPTION_MAX = 200;
+
+export type TeamInput = { name: string; description: string; captainId: string | null; viceCaptainId: string | null };
+
+export function validateTeamInput(raw: { name?: unknown; description?: unknown; captainId?: unknown; viceCaptainId?: unknown }):
+  | { ok: true; value: TeamInput }
+  | { ok: false; errors: Partial<Record<"name" | "description" | "captain", string>> } {
+  const name = clean(raw.name);
+  const description = clean(raw.description);
+  const errors: Partial<Record<"name" | "description" | "captain", string>> = {};
+  if (name.length < TEAM_NAME_MIN) errors.name = `Give the team a name (at least ${TEAM_NAME_MIN} letters).`;
+  else if (name.length > TEAM_NAME_MAX) errors.name = `The name can be at most ${TEAM_NAME_MAX} characters.`;
+  if (description.length > TEAM_DESCRIPTION_MAX) errors.description = `The description can be at most ${TEAM_DESCRIPTION_MAX} characters.`;
+  const captainId = typeof raw.captainId === "string" && raw.captainId ? raw.captainId : null;
+  const viceCaptainId = typeof raw.viceCaptainId === "string" && raw.viceCaptainId ? raw.viceCaptainId : null;
+  if (captainId && viceCaptainId && captainId === viceCaptainId) errors.captain = "The captain and vice-captain must be two different people.";
+  if (Object.keys(errors).length) return { ok: false, errors };
+  return { ok: true, value: { name, description, captainId, viceCaptainId } };
+}

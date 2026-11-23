@@ -17,7 +17,7 @@ export type Role = "admin" | "member";
 export type Status = "pending" | "approved" | "rejected" | "removed" | "left";
 export type Membership = { community_id: string; user_id: string; role: Role; status: Status; player_number: number | null };
 
-export type MemberRow = { user_id: string; name: string; role: Role; player_number: number | null };
+export type MemberRow = { user_id: string; name: string; role: Role; player_number: number | null; playing_role: string | null };
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 export const isUuid = (s: string) => UUID.test(s);
@@ -56,7 +56,7 @@ export async function approvedCount(communityId: string): Promise<number> {
 
 export async function listApprovedMembers(communityId: string): Promise<MemberRow[]> {
   return query<MemberRow>(
-    `select m.user_id, u.name, m.role, m.player_number
+    `select m.user_id, u.name, m.role, m.player_number, u.playing_role
        from community_member m join app_user u on u.id = m.user_id
       where m.community_id = $1 and m.status = 'approved' and m.player_number is not null
       order by m.role, m.player_number`,

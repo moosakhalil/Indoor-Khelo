@@ -15,6 +15,19 @@ async function logAudit(c: Client, communityId: string | null, actorId: string, 
   await c.query("insert into audit_log (community_id, actor_id, action, details) values ($1, $2, $3, $4)", [communityId, actorId, action, JSON.stringify(details)]);
 }
 
+/** Someone who leaves a community also leaves its squads and stops being captain or vice-captain there. */
+async function dropFromTeams(c: Client, communityId: string | null, userId: string) {
+  const where = communityId ? "t.community_id = $2 and" : "";
+  const params = communityId ? [userId, communityId] : [userId];
+  await c.query(`delete from team_player p using team t where p.team_id = t.id and ${where} p.user_id = $1`, params);
+  await c.query(
+    `update team t set captain_id = case when captain_id = $1 then null else captain_id end,
+                       vice_captain_id = case when vice_captain_id = $1 then null else vice_captain_id end
+      where ${communityId ? "t.community_id = $2 and" : ""} (captain_id = $1 or vice_captain_id = $1)`,
+    params,
+  );
+}
+
 async function adminCheck(c: Client, communityId: string, userId: string): Promise<boolean> {
   const r = await c.query("select 1 from community_member where community_id = $1 and user_id = $2 and role = 'admin' and status = 'approved'", [communityId, userId]);
   return r.rows.length > 0;
@@ -35,6 +48,7 @@ export async function leaveCommunity(userId: string, communityId: string): Promi
       if (!others.rows.length) return "only_admin"; // must hand over first, or delete the community
     }
     await c.query("update community_member set status = 'left', player_number = null, left_at = now() where community_id = $1 and user_id = $2", [communityId, userId]);
+    await dropFromTeams(c, communityId, userId);
     await logAudit(c, communityId, userId, m.status === "pending" ? "request_cancelled" : "member_left", { user: userId });
     return "ok";
   });
@@ -52,6 +66,7 @@ export async function removeMember(adminId: string, communityId: string, targetI
     if (!t) return "not_found";
     if (t.role === "admin") return "is_admin"; // take Admin away first
     await c.query("update community_member set status = 'removed', player_number = null, decided_at = now(), decided_by = $3 where community_id = $1 and user_id = $2", [communityId, targetId, adminId]);
+    await dropFromTeams(c, communityId, targetId);
     await logAudit(c, communityId, adminId, "member_removed", { user: targetId });
     return "ok";
   });
@@ -202,7 +217,12 @@ export async function deleteAccountData(userId: string): Promise<AccountDeleteOu
       "update community_member set status = 'left', player_number = null, left_at = now() where user_id = $1 and status in ('approved', 'pending')",
       [userId],
     );
-    await c.query("update app_user set name = 'Deleted player', terms_accepted_at = null, updated_at = now() where id = $1", [userId]);
+    await dropFromTeams(c, null, userId);
+    await c.query(
+      `update app_user set name = 'Deleted player', terms_accepted_at = null, batting_hand = null, batting_position = null,
+              bowling_style = null, playing_role = null, updated_at = now() where id = $1`,
+      [userId],
+    );
     await logAudit(c, null, userId, "account_deleted", { communities: plan.willLeave.length + plan.willDelete.length });
   });
   return "ok";
