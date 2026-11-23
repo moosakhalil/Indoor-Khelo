@@ -4,6 +4,7 @@ import CommunityLogo from "@/components/CommunityLogo";
 import Frame from "@/components/Frame";
 import { requireMember } from "@/lib/community";
 import { requireAcceptedUser } from "@/lib/session";
+import { teamTable } from "@/lib/reports";
 import { listTeams } from "@/lib/teams";
 
 export const metadata: Metadata = { title: "Teams" };
@@ -13,6 +14,7 @@ export default async function TeamsPage({ params }: { params: Promise<{ id: stri
   const user = await requireAcceptedUser();
   await requireMember(id, user.id);
   const teams = await listTeams(id);
+  const table = (await teamTable(id, teams.map((t) => ({ id: t.id, name: t.name })))).filter((t) => t.played > 0);
   return (
     <Frame communityId={id} title="Teams">
       <div className="stack">
@@ -35,11 +37,25 @@ export default async function TeamsPage({ params }: { params: Promise<{ id: stri
             ))}
           </section>
         )}
+        {table.length > 0 && (
+          <section className="card">
+            <b>Team table</b>
+            <table className="board" aria-label="Team table">
+              <thead><tr><td className="muted small">Team</td><td className="muted small">P</td><td className="muted small">W</td><td className="muted small">L</td><td className="muted small">T</td><td className="muted small">Win %</td><td className="muted small">Runs</td></tr></thead>
+              <tbody>
+                {table.map((t) => (
+                  <tr key={t.id}><td><Link href={`/c/${id}/teams/${t.id}`}><b>{t.name}</b></Link></td><td>{t.played}</td><td>{t.won}</td><td>{t.lost}</td><td>{t.tied}</td><td>{t.winPercent === null ? "–" : t.winPercent.toFixed(0)}</td><td>{t.totalRuns}</td></tr>
+                ))}
+              </tbody>
+            </table>
+            <p className="muted small" style={{ margin: "6px 0 0" }}>Ranked by wins, then win percentage, then runs.</p>
+          </section>
+        )}
         <Link href={`/c/${id}/teams/new`} className="btn gold">New team</Link>
         <p className="muted small" style={{ margin: "0 2px" }}>Any member can create teams. Each team shows who created it and who changed it last.</p>
         <section className="card list">
           <Link href={`/c/${id}/members`} className="item"><span className="t grow"><b>Members</b><small>Everyone in this community</small></span><span aria-hidden="true">›</span></Link>
-          <div className="item muted"><span className="t grow"><b>Leaderboards</b><small>Arrive with match stats (a later phase)</small></span></div>
+          <Link href={`/c/${id}/leaderboard`} className="item"><span className="t grow"><b>Leaderboards</b><small>Rank every member by any stat</small></span><span aria-hidden="true">›</span></Link>
         </section>
       </div>
     </Frame>

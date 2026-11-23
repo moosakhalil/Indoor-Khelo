@@ -26,6 +26,38 @@ async function dropFromTeams(c: Client, communityId: string | null, userId: stri
       where ${communityId ? "t.community_id = $2 and" : ""} (captain_id = $1 or vice_captain_id = $1)`,
     params,
   );
+  await dropFromMatches(c, communityId, userId);
+}
+
+/**
+ * Someone who leaves is taken out of matches that have not started (lineups and "Are you coming?" replies) and loses
+ * their alerts there. Matches already played keep their records, because those stats belong to the match.
+ */
+async function dropFromMatches(c: Client, communityId: string | null, userId: string) {
+  const inCommunity = communityId ? "m.community_id = $2 and" : "";
+  const params = communityId ? [userId, communityId] : [userId];
+  await c.query(
+    `delete from match_player p using cricket_match m where p.match_id = m.id and ${inCommunity}
+            m.status in ('draft','scheduled','postponed','cancelled') and p.user_id = $1 and p.guest_name is null`,
+    params,
+  );
+  // A guest entry that was linked to this person goes back to being a plain guest.
+  await c.query(
+    `update match_player p set user_id = null, linked_by = null, linked_at = null from cricket_match m
+      where p.match_id = m.id and ${inCommunity} m.status in ('draft','scheduled','postponed','cancelled')
+        and p.user_id = $1 and p.guest_name is not null`,
+    params,
+  );
+  await c.query(
+    `delete from match_availability a using cricket_match m where a.match_id = m.id and ${inCommunity}
+            m.status in ('draft','scheduled','postponed','cancelled') and a.user_id = $1`,
+    params,
+  );
+  await c.query(`delete from app_alert where user_id = $1 ${communityId ? "and community_id = $2" : ""}`, params);
+  // Someone who leaves is taken out of the cost sharing of open bookings. Money they recorded stays on the booking's records.
+  await c.query(
+    `delete from booking_member bm using booking b where bm.booking_id = b.id and ${communityId ? "b.community_id = $2 and" : ""}
+            b.status in ('pending', 'confirmed') and bm.user_id = $1`, params);
 }
 
 async function adminCheck(c: Client, communityId: string, userId: string): Promise<boolean> {
@@ -149,7 +181,7 @@ export async function deleteCommunity(adminId: string, communityId: string, type
 /* ---------- recent activity shown on the Community page ---------- */
 export type ActivityRow = { action: string; actor_name: string | null; target_name: string | null; created_at: Date };
 
-const SHOWN = ["community_created", "request_approved", "joined_open", "member_left", "member_removed", "admin_granted", "admin_removed", "settings_changed"];
+const SHOWN = ["community_created", "request_approved", "joined_open", "member_left", "member_removed", "admin_granted", "admin_removed", "settings_changed", "match_created", "match_postponed", "match_cancelled", "match_corrected"];
 
 export async function listActivity(communityId: string, limit = 8): Promise<ActivityRow[]> {
   return query<ActivityRow>(
@@ -175,6 +207,10 @@ export function describeActivity(a: ActivityRow): string {
     case "admin_granted": return `${actor} made ${target} an Admin`;
     case "admin_removed": return `${actor} took Admin away from ${target}`;
     case "settings_changed": return `${actor} changed the community settings`;
+    case "match_created": return `${actor} created a match`;
+    case "match_postponed": return `${actor} postponed a match`;
+    case "match_cancelled": return `${actor} cancelled a match`;
+    case "match_corrected": return `${actor} corrected a finished match`;
     default: return actor;
   }
 }
@@ -218,6 +254,7 @@ export async function deleteAccountData(userId: string): Promise<AccountDeleteOu
       [userId],
     );
     await dropFromTeams(c, null, userId);
+    await c.query("update booking_payment set payer_name = 'Deleted player' where payer_user_id = $1", [userId]);   // the money stays on record, the name does not
     await c.query(
       `update app_user set name = 'Deleted player', terms_accepted_at = null, batting_hand = null, batting_position = null,
               bowling_style = null, playing_role = null, updated_at = now() where id = $1`,

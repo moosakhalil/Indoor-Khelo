@@ -162,10 +162,17 @@ export async function decideRequest(adminId: string, communityId: string, target
   return "ok";
 }
 
-export type NumberOutcome = "ok" | "taken" | "not_member";
+export type NumberOutcome = "ok" | "taken" | "not_member" | "locked";
 
 /** First come, first served: the database allows one owner per number, so a second person is refused. */
 export async function chooseNumber(userId: string, communityId: string, n: number): Promise<NumberOutcome> {
+  // The number is locked while the player is in a live or paused match, so the scoreboard never changes under people's feet.
+  const inLive = await query(
+    `select 1 from match_player p join cricket_match m on m.id = p.match_id
+      where m.community_id = $1 and p.user_id = $2 and m.status in ('live', 'paused') limit 1`,
+    [communityId, userId],
+  );
+  if (inLive.length) return "locked";
   try {
     const rows = await query<{ user_id: string }>(
       `update community_member set player_number = $3

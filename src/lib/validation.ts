@@ -113,7 +113,7 @@ export function ordinal(n: number): string {
   }
 }
 
-function clean(v: unknown): string {
+export function clean(v: unknown): string {
   return typeof v === "string" ? v.replace(/\s+/g, " ").trim() : "";
 }
 

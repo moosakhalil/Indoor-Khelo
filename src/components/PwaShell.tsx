@@ -1,5 +1,7 @@
 "use client";
 
+import { useRouter } from "next/navigation";
+import { flushAllWaiting } from "@/lib/outbox";
 import { useEffect, useRef, useState } from "react";
 
 type InstallEvent = Event & { prompt: () => Promise<void>; userChoice: Promise<{ outcome: string }> };
@@ -35,6 +37,25 @@ export default function PwaShell() {
   const [installEvent, setInstallEvent] = useState<InstallEvent | null>(null);
   const [iosHelp, setIosHelp] = useState<"safari-steps" | "open-safari" | null>(null);
   const reloaded = useRef(false);
+  const router = useRouter();
+
+  // Balls scored with no signal are sent when the app opens, and again when the signal comes back (on any screen).
+  useEffect(() => {
+    void flushAllWaiting();
+    const on = () => { void flushAllWaiting(); };
+    window.addEventListener("online", on);
+    return () => window.removeEventListener("online", on);
+  }, []);
+
+  // Match times are shown in the viewer's own time zone. The server learns it from this cookie (only a zone name, nothing personal).
+  useEffect(() => {
+    try {
+      const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+      if (!tz || document.cookie.split("; ").some((c) => c === `ik_tz=${encodeURIComponent(tz)}`)) return;
+      document.cookie = `ik_tz=${encodeURIComponent(tz)}; path=/; max-age=31536000; samesite=lax`;
+      router.refresh();
+    } catch { /* an unreadable zone just means times show in UTC */ }
+  }, [router]);
 
   useEffect(() => {
     setOnline(navigator.onLine);

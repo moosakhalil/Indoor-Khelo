@@ -91,6 +91,7 @@ export async function chooseNumberAction(_prev: FormState, formData: FormData): 
   const outcome = await chooseNumber(user.id, communityId, parsed.value);
   if (outcome === "taken") return { error: `Number ${parsed.value} was just taken. Please choose another number.` };
   if (outcome === "not_member") return { error: "You can choose a number once you are an approved member." };
+  if (outcome === "locked") return { error: "You are in a match that is being played, so your number is locked until it ends." };
   revalidatePath(`/c/${communityId}`, "layout");
   redirect(formData.get("isNew") === "1" ? `/c/${communityId}/invite?new=1` : `/c/${communityId}`);
 }

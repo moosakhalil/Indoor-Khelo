@@ -41,7 +41,7 @@ self.addEventListener("activate", (event) => {
   );
 });
 
-const PRIVATE = [/^\/c\/[^/]+\/payments(\/|$)/, /^\/c\/[^/]+\/profile(\/|$)/, /^\/terms(\/|$)/, /^\/account(\/|$)/, /^\/profile(\/|$)/];
+const PRIVATE = [/^\/c\/[^/]+\/payments(\/|$)/, /^\/c\/[^/]+\/profile(\/|$)/, /^\/terms(\/|$)/, /^\/account(\/|$)/, /^\/profile(\/|$)/, /^\/c\/[^/]+\/alerts(\/|$)/];
 const isPrivate = (path) => PRIVATE.some((re) => re.test(path));
 
 function withTimeout(promise, ms) {

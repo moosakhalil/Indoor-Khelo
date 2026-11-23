@@ -74,7 +74,14 @@ export async function teamsOfPlayer(communityId: string, userId: string): Promis
   );
 }
 
-export type SaveOutcome = "ok" | "forbidden" | "name_taken" | "not_found" | "bad_person";
+/** How many matches use this team. A team with matches cannot be deleted. */
+export async function teamMatchCount(teamId: string): Promise<number> {
+  if (!isUuid(teamId)) return 0;
+  const r = await one<{ n: number }>("select count(*)::int as n from match_side where team_id = $1", [teamId]);
+  return r?.n ?? 0;
+}
+
+export type SaveOutcome = "ok" | "forbidden" | "name_taken" | "not_found" | "bad_person" | "has_matches";
 
 /** Captain and vice-captain must be approved members; they are put in the squad automatically. */
 async function checkLeaders(c: PoolClient, communityId: string, input: TeamInput): Promise<boolean> {
@@ -161,6 +168,9 @@ export async function setSquad(userId: string, communityId: string, teamId: stri
 export async function deleteTeam(userId: string, communityId: string, teamId: string): Promise<SaveOutcome> {
   return tx(async (c) => {
     if (!(await isApproved(c, communityId, userId))) return "forbidden";
+    // A team that has matches is protected: its matches would lose their record.
+    const used = await c.query("select 1 from match_side s join team t on t.id = s.team_id where s.team_id = $1 and t.community_id = $2 limit 1", [teamId, communityId]);
+    if (used.rows.length) return "has_matches";
     const t = await c.query<{ name: string }>("delete from team where id = $1 and community_id = $2 returning name", [teamId, communityId]);
     if (!t.rows.length) return "not_found";
     await log(c, communityId, userId, "team_deleted", { name: t.rows[0]!.name });

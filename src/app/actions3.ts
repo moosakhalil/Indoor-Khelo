@@ -87,7 +87,8 @@ export async function deleteTeamAction(formData: FormData) {
   const communityId = idOf(formData, "communityId");
   const teamId = idOf(formData, "teamId");
   if (!communityId || !teamId) return;
-  await deleteTeam(user.id, communityId, teamId);
+  const outcome = await deleteTeam(user.id, communityId, teamId);
   revalidatePath(`/c/${communityId}/teams`, "layout");
-  redirect(`/c/${communityId}/teams`);
+  // A team with matches is protected; send the person back to the team, where the reason is shown.
+  redirect(outcome === "has_matches" ? `/c/${communityId}/teams/${teamId}/edit` : `/c/${communityId}/teams`);
 }
