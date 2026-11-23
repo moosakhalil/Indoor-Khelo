@@ -257,7 +257,7 @@ export async function deleteAccountData(userId: string): Promise<AccountDeleteOu
     await c.query("update booking_payment set payer_name = 'Deleted player' where payer_user_id = $1", [userId]);   // the money stays on record, the name does not
     await c.query(
       `update app_user set name = 'Deleted player', terms_accepted_at = null, batting_hand = null, batting_position = null,
-              bowling_style = null, playing_role = null, updated_at = now() where id = $1`,
+              bowling_style = null, playing_role = null, profile_share_token = null, updated_at = now() where id = $1`,
       [userId],
     );
     await logAudit(c, null, userId, "account_deleted", { communities: plan.willLeave.length + plan.willDelete.length });

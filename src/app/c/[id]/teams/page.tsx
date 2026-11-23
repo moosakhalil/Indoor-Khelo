@@ -55,7 +55,10 @@ export default async function TeamsPage({ params }: { params: Promise<{ id: stri
         <p className="muted small" style={{ margin: "0 2px" }}>Any member can create teams. Each team shows who created it and who changed it last.</p>
         <section className="card list">
           <Link href={`/c/${id}/members`} className="item"><span className="t grow"><b>Members</b><small>Everyone in this community</small></span><span aria-hidden="true">›</span></Link>
+          <Link href={`/c/${id}/series`} className="item"><span className="t grow"><b>Series</b><small>Group matches: best of 3, tournaments</small></span><span aria-hidden="true">›</span></Link>
           <Link href={`/c/${id}/leaderboard`} className="item"><span className="t grow"><b>Leaderboards</b><small>Rank every member by any stat</small></span><span aria-hidden="true">›</span></Link>
+          <Link href={`/c/${id}/insights`} className="item"><span className="t grow"><b>Insights</b><small>Records, partnerships, bowling by over</small></span><span aria-hidden="true">›</span></Link>
+          <Link href={`/c/${id}/compare`} className="item"><span className="t grow"><b>Compare two players</b><small>Side by side</small></span><span aria-hidden="true">›</span></Link>
         </section>
       </div>
     </Frame>

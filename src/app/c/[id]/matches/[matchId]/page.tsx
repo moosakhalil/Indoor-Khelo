@@ -14,6 +14,7 @@ import { listApprovedMembers, requireMember } from "@/lib/community";
 import { buildState } from "@/lib/engine/engine";
 import { getLock, loadEvents, scorersOf } from "@/lib/scoring";
 import { getMatch, listLineup, listReplies, noReplyCount } from "@/lib/matches";
+import { seriesOfMatch } from "@/lib/seriesDb";
 import { NOT_STARTED, DISMISSALS, SUPER_OVER_MODES, bowlerLimitWarning, formatWhen, patternText } from "@/lib/matchRules";
 import { noticeFor } from "@/lib/notices";
 import { getOrigin } from "@/lib/origin";
@@ -23,7 +24,7 @@ import { getZone } from "@/lib/zone";
 
 export const metadata: Metadata = { title: "Match" };
 
-type Q = { created?: string; saved?: string; rematch?: string; e?: string; n?: string; skip?: string };
+type Q = { created?: string; saved?: string; rematch?: string; e?: string; n?: string; skip?: string; series?: string; seriesnote?: string };
 
 export default async function MatchPage({ params, searchParams }: { params: Promise<{ id: string; matchId: string }>; searchParams: Promise<Q> }) {
   const { id, matchId } = await params;
@@ -32,6 +33,7 @@ export default async function MatchPage({ params, searchParams }: { params: Prom
   await requireMember(id, user.id);
   const m = await getMatch(id, matchId, user.id);
   if (!m) notFound();
+  const series = await seriesOfMatch(id, matchId);
   const [lineup, replies, members, tz, origin, events, lock, scorers] = await Promise.all([listLineup(id, matchId), listReplies(id, matchId), listApprovedMembers(id), getZone(), getOrigin(), loadEvents(matchId), getLock(id, matchId), scorersOf(matchId)]);
   const built = buildState(events);
   const state = built.ok && built.state.started ? built.state : null;
@@ -71,7 +73,8 @@ export default async function MatchPage({ params, searchParams }: { params: Prom
       <div className="stack">
         {q.created && <div className="banner green" role="status">Match created. Everyone in the community was told and can reply.</div>}
         {q.saved && <div className="banner green" role="status">Changes saved.</div>}
-        {q.rematch && <div className="banner green" role="status">Rematch created. Lineups were copied: change them below if you need to.</div>}
+        {q.rematch && <div className="banner green" role="status">Rematch created. Lineups were copied: change them below if you need to.{q.series ? " It is part of the series." : ""}</div>}
+        {series && <Link href={`/c/${id}/series/${series.id}`} className="chip gold" style={{ alignSelf: "flex-start" }}>Series: {series.name} ›</Link>}
         {notice && <div className={`banner ${notice.tone}`} role="status">{notice.text}</div>}
         {warning && <div className="banner gold" role="status">{warning} <Link href={`/c/${id}/matches/${matchId}/edit`} style={{ textDecoration: "underline" }}>Edit the match</Link></div>}
 
@@ -217,7 +220,7 @@ export default async function MatchPage({ params, searchParams }: { params: Prom
         </section>
 
         <div className="stack">
-          <Link href={`/c/${id}/matches/${matchId}/rematch`} className="btn gold">Rematch</Link>
+          <Link href={`/c/${id}/matches/${matchId}/rematch`} className="btn gold">{series?.status === "open" ? "Play another match in this series" : "Rematch"}</Link>
           {notStarted && <Link href={`/c/${id}/matches/${matchId}/edit`} className="btn ghost">Edit match</Link>}
           {(m.status === "scheduled" || m.status === "draft") && (
             <details>

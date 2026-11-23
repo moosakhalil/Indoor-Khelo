@@ -3,6 +3,7 @@ import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import CopyButton from "@/components/CopyButton";
 import Frame from "@/components/Frame";
+import { WinTab, WormTab } from "@/components/AnalyticsParts";
 import { BallsTab, ChangesTab, OversTab, ScorecardTab, StatsTab, SummaryTab } from "@/components/ReportParts";
 import { shareReportAction } from "@/app/actions6";
 import { requireMember } from "@/lib/community";
@@ -18,7 +19,7 @@ import { getZone } from "@/lib/zone";
 export const metadata: Metadata = { title: "Match report" };
 export const dynamic = "force-dynamic";
 
-const TABS = [["summary", "Summary"], ["scorecard", "Scorecard"], ["balls", "Ball by ball"], ["overs", "Over by over"], ["stats", "Match stats"], ["changes", "Changes"]] as const;
+const TABS = [["summary", "Summary"], ["scorecard", "Scorecard"], ["balls", "Ball by ball"], ["overs", "Over by over"], ["stats", "Match stats"], ["worm", "Worm"], ["win", "Win chance"], ["changes", "Changes"]] as const;
 
 // The full record of a finished match. Every member can open it, and it works offline once opened.
 export default async function ReportPage({ params, searchParams }: { params: Promise<{ id: string; matchId: string }>; searchParams: Promise<{ tab?: string; corrected?: string }> }) {
@@ -57,6 +58,8 @@ export default async function ReportPage({ params, searchParams }: { params: Pro
         )}
         {tab === "overs" && <OversTab m={m} />}
         {tab === "stats" && <StatsTab m={m} communityId={id} />}
+        {tab === "worm" && <WormTab m={m} />}
+        {tab === "win" && <WinTab m={m} />}
         {tab === "changes" && <ChangesTab m={m} />}
         <section className="card" id="share">
           <b>Share this report</b>

@@ -6,13 +6,14 @@ import { GROUPS, STATS, buildBoard, careerOf, fmt, ordinal, type Career } from "
 import { listApprovedMembers, requireMember } from "@/lib/community";
 import { communityCareers } from "@/lib/reports";
 import { requireAcceptedUser } from "@/lib/session";
+import { listSeries } from "@/lib/seriesDb";
 import { listTeams } from "@/lib/teams";
 
 export const metadata: Metadata = { title: "Leaderboard" };
 export const dynamic = "force-dynamic";
 
 const DATE = /^\d{4}-\d{2}-\d{2}$/;
-type Q = { group?: string; stat?: string; flip?: string; team?: string; from?: string; to?: string };
+type Q = { group?: string; stat?: string; flip?: string; team?: string; from?: string; to?: string; series?: string };
 
 // One leaderboard ranks every member by any stat. Nobody is hidden; rate stats need a minimum before a player is ranked.
 export default async function LeaderboardPage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<Q> }) {
@@ -20,21 +21,23 @@ export default async function LeaderboardPage({ params, searchParams }: { params
   const q = await searchParams;
   const user = await requireAcceptedUser();
   await requireMember(id, user.id);
-  const teams = await listTeams(id);
+  const [teams, allSeries] = await Promise.all([listTeams(id), listSeries(id)]);
   const from = q.from && DATE.test(q.from) ? q.from : null;
   const to = q.to && DATE.test(q.to) ? q.to : null;
   const teamId = q.team && teams.some((t) => t.id === q.team) ? q.team : null;
+  const seriesId = q.series && allSeries.some((x) => x.id === q.series) ? q.series : null;
   const def = STATS.find((s) => s.key === q.stat) ?? STATS.find((s) => s.group === (GROUPS.find((g) => g.key === q.group)?.key ?? "batting"))!;
   const group = def.group;
   const flip = q.flip === "1";
 
-  const [members, careers] = await Promise.all([listApprovedMembers(id), communityCareers(id, { teamId, from, to })]);
+  const [members, careers] = await Promise.all([listApprovedMembers(id), communityCareers(id, { teamId, seriesId, from, to })]);
   const empty = careerOf([]);
   const rows = buildBoard(members.map((m) => ({ userId: m.user_id, name: m.name, number: m.player_number, career: (careers.get(m.user_id) ?? empty) as Career })), def, flip);
   const ranked = rows.filter((r) => r.ranked);
   const mine = rows.find((r) => r.userId === user.id);
   const keep = new URLSearchParams();
   if (teamId) keep.set("team", teamId);
+  if (seriesId) keep.set("series", seriesId);
   if (from) keep.set("from", from);
   if (to) keep.set("to", to);
   const extra = keep.toString() ? `&${keep.toString()}` : "";
@@ -79,6 +82,12 @@ export default async function LeaderboardPage({ params, searchParams }: { params
         <form method="get" className="card" aria-label="Filter the leaderboard">
           <input type="hidden" name="stat" value={def.key} />
           <b>Filters</b>
+          {allSeries.length > 0 && (
+            <>
+              <label className="lb" htmlFor="l-series">Series</label>
+              <select id="l-series" name="series" className="field" defaultValue={seriesId ?? ""}><option value="">All matches</option>{allSeries.map((x) => <option key={x.id} value={x.id}>{x.name}</option>)}</select>
+            </>
+          )}
           <label className="lb" htmlFor="l-team">Team</label>
           <select id="l-team" name="team" className="field" defaultValue={teamId ?? ""}><option value="">Any team</option>{teams.map((t) => <option key={t.id} value={t.id}>{t.name}</option>)}</select>
           <div className="two">
@@ -87,7 +96,7 @@ export default async function LeaderboardPage({ params, searchParams }: { params
           </div>
           <div className="two" style={{ marginTop: 10 }}>
             <button className="btn gold small" style={{ width: "100%" }}>Apply</button>
-            {(teamId || from || to) && <Link href={`/c/${id}/leaderboard?stat=${def.key}`} className="btn ghost small" style={{ width: "100%" }}>Clear filters</Link>}
+            {(teamId || seriesId || from || to) && <Link href={`/c/${id}/leaderboard?stat=${def.key}`} className="btn ghost small" style={{ width: "100%" }}>Clear filters</Link>}
           </div>
         </form>
       </div>

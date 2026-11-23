@@ -304,3 +304,7 @@ table.sc th:nth-child(2) { text-align: left; }
 /* ---------- bookings and payments (Phase 7) ---------- */
 .progress { height: 12px; border-radius: 6px; background: var(--card2); border: 1px solid var(--line); overflow: hidden; margin-top: 8px; }
 .progress > span { display: block; height: 100%; background: var(--green); border-radius: 6px; }
+
+/* ---------- analytics (Phase 8) ---------- */
+.sc td.cmp-best { font-weight: 800; color: var(--gold); }
+.cmp-word { font-weight: 700; font-size: 0.68rem; color: var(--gold); text-transform: uppercase; letter-spacing: 0.04em; }

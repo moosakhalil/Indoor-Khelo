@@ -12,6 +12,7 @@ import {
 import {
   SEVERAL_MAX, checkWhen, validTimeZone, validateGuestName, validateMatchDetails, validateSides, validateToss, zonedToUtc,
 } from "@/lib/matchRules";
+import { addMatches as addSeriesMatches, makeSeriesFromRematch, seriesOfMatch } from "@/lib/seriesDb";
 import type { FormState } from "@/app/actions";
 
 const idOf = (fd: FormData, key: string) => {
@@ -280,8 +281,20 @@ export async function rematchAction(_prev: FormState, fd: FormData): Promise<For
   if (res.outcome === "forbidden") return { error: "Only members of this community can create matches." };
   if (res.outcome === "not_found") return { error: "The original match no longer exists." };
   if (res.outcome !== "ok") return { error: "The rematch could not be created." };
+  // In a series, the new match joins it ("Play another match in this series"). Otherwise a tick can start a series from the two matches.
+  let note = "";
+  const inSeries = await seriesOfMatch(communityId, matchId);
+  if (inSeries && inSeries.status === "open") {
+    const joined = await addSeriesMatches(user.id, communityId, inSeries.id, [res.id!]);
+    note = joined.outcome === "ok" ? `&series=${inSeries.id}` : "&seriesnote=1";
+  } else if (!inSeries && String(fd.get("makeSeries") ?? "") === "on") {
+    const made = await makeSeriesFromRematch(user.id, communityId, matchId, res.id!);
+    revalidatePath(`/c/${communityId}`, "layout");
+    if (made.outcome === "ok") redirect(`/c/${communityId}/series/${made.id}?created=1`);
+    note = "&seriesnote=1";
+  }
   revalidatePath(`/c/${communityId}`, "layout");
-  redirect(`/c/${communityId}/matches/${res.id}?rematch=1`);
+  redirect(`/c/${communityId}/matches/${res.id}?rematch=1${note}`);
 }
 
 /* ---------- alerts ---------- */

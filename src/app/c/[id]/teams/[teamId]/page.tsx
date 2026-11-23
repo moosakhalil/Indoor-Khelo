@@ -1,9 +1,11 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { FormStrip, TeamScoresChart } from "@/components/AnalyticsParts";
 import CommunityLogo from "@/components/CommunityLogo";
 import Frame from "@/components/Frame";
 import Shirt from "@/components/Shirt";
+import { scoresSeries, teamForm } from "@/lib/analytics";
 import { requireMember } from "@/lib/community";
 import { teamContributors, teamRecord } from "@/lib/reports";
 import { requireAcceptedUser } from "@/lib/session";
@@ -66,11 +68,29 @@ export default async function TeamPage({ params }: { params: Promise<{ id: strin
             </>
           )}
         </section>
+        {rec.played > 0 && (
+          <section className="card">
+            <b>Form</b>
+            <small className="muted" style={{ display: "block" }}>Last {Math.min(5, rec.history.length)} results, oldest first</small>
+            <FormStrip strip={teamForm(rec.history).strip} />
+            <div style={{ marginTop: 14 }}><b>Scores over time</b></div>
+            <TeamScoresChart series={scoresSeries(rec.history)} />
+          </section>
+        )}
         {rec.headToHead.length > 0 && (
           <section className="card">
             <b>Head to head</b>
             <div className="list" style={{ marginTop: 6 }}>
-              {rec.headToHead.map((h) => <div key={h.opponent} className="item space"><span>v {h.opponent}</span><b>{h.won}W {h.lost}L{h.tied ? ` ${h.tied}T` : ""} <small className="muted">of {h.played}</small></b></div>)}
+              {rec.headToHead.map((h) => (
+                <div key={h.opponent} className="item" style={{ display: "block" }}>
+                  <div className="row space"><span><b>v {h.opponent}</b></span><b>{h.won}W {h.lost}L{h.tied ? ` ${h.tied}T` : ""} <small className="muted">of {h.played}</small></b></div>
+                  {h.highestFor !== null && (
+                    <small className="muted" style={{ display: "block", marginTop: 4, lineHeight: 1.5 }}>
+                      This team scored: highest {h.highestFor}, lowest {h.lowestFor}. {h.opponent} scored: highest {h.highestAgainst}, lowest {h.lowestAgainst}.
+                    </small>
+                  )}
+                </div>
+              ))}
             </div>
           </section>
         )}

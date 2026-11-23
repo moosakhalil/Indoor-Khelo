@@ -65,7 +65,7 @@ export async function correctBall(userId: string, communityId: string, matchId: 
 }
 
 /* ---------- reading ---------- */
-export type StatFilters = { teamId?: string | null; from?: string | null; to?: string | null; allCommunities?: boolean };
+export type StatFilters = { teamId?: string | null; from?: string | null; to?: string | null; allCommunities?: boolean; seriesId?: string | null };
 
 type Row = {
   match_id: string; entry_id: string; side: 1 | 2; name: string; number_used: number | null; result: PlayerMatch["result"]; points: number; pom: boolean;
@@ -95,6 +95,7 @@ export async function playerLines(communityId: string, userId: string, f: StatFi
   let where = "p.user_id = $1";
   if (!f.allCommunities) { params.push(communityId); where += ` and m.community_id = $${params.length}`; }
   if (f.teamId && isUuid(f.teamId)) { params.push(f.teamId); where += ` and ms.team_id = $${params.length}`; }
+  if (f.seriesId && isUuid(f.seriesId)) { params.push(f.seriesId); where += ` and exists (select 1 from series_match sx where sx.match_id = m.id and sx.series_id = $${params.length})`; }
   if (f.from) { params.push(f.from); where += ` and coalesce(m.started_at, m.scheduled_at) >= $${params.length}::date`; }
   if (f.to) { params.push(f.to); where += ` and coalesce(m.started_at, m.scheduled_at) < ($${params.length}::date + 1)`; }
   const rows = await query<Row>(`${SELECT} where ${where} order by coalesce(m.started_at, m.scheduled_at)`, params);
@@ -106,6 +107,7 @@ export async function communityCareers(communityId: string, f: StatFilters = {})
   const params: unknown[] = [communityId];
   let where = "m.community_id = $1 and p.user_id is not null";
   if (f.teamId && isUuid(f.teamId)) { params.push(f.teamId); where += ` and ms.team_id = $${params.length}`; }
+  if (f.seriesId && isUuid(f.seriesId)) { params.push(f.seriesId); where += ` and exists (select 1 from series_match sx where sx.match_id = m.id and sx.series_id = $${params.length})`; }
   if (f.from) { params.push(f.from); where += ` and coalesce(m.started_at, m.scheduled_at) >= $${params.length}::date`; }
   if (f.to) { params.push(f.to); where += ` and coalesce(m.started_at, m.scheduled_at) < ($${params.length}::date + 1)`; }
   const rows = await query<Row>(`${SELECT} where ${where}`, params);
@@ -121,7 +123,15 @@ export type TeamRecord = {
   played: number; won: number; lost: number; tied: number; noResult: number; winPercent: number | null;
   totalRuns: number; highest: number | null; lowest: number | null;
   recent: { matchId: string; when: Date | null; opponent: string; text: string; result: "win" | "loss" | "tie" | "none"; runsFor: number | null; runsAgainst: number | null }[];
-  headToHead: { opponent: string; played: number; won: number; lost: number; tied: number }[];
+  headToHead: HeadToHead[];
+  /** Every finished match of this team, oldest first (for the form strip and the scores chart). */
+  history: { matchId: string; when: Date | null; opponent: string; result: "win" | "loss" | "tie" | "none"; runsFor: number | null; runsAgainst: number | null }[];
+};
+
+/** A team's record against one opponent, with the highest and lowest score of each side in those matches. */
+export type HeadToHead = {
+  opponent: string; played: number; won: number; lost: number; tied: number;
+  highestFor: number | null; lowestFor: number | null; highestAgainst: number | null; lowestAgainst: number | null;
 };
 
 type MatchRowForTeam = { id: string; when: Date | null; n1: string; t1: string | null; n2: string; t2: string | null; result: { kind: string; winner: Side | null; text: string } | null; scores: Scores | null };
@@ -134,8 +144,8 @@ async function finishedMatches(communityId: string): Promise<MatchRowForTeam[]> 
 }
 
 function recordFor(rows: MatchRowForTeam[], mine: (r: MatchRowForTeam) => Side | null): TeamRecord {
-  const rec: TeamRecord = { played: 0, won: 0, lost: 0, tied: 0, noResult: 0, winPercent: null, totalRuns: 0, highest: null, lowest: null, recent: [], headToHead: [] };
-  const h2h = new Map<string, { opponent: string; played: number; won: number; lost: number; tied: number }>();
+  const rec: TeamRecord = { played: 0, won: 0, lost: 0, tied: 0, noResult: 0, winPercent: null, totalRuns: 0, highest: null, lowest: null, recent: [], headToHead: [], history: [] };
+  const h2h = new Map<string, HeadToHead>();
   const totals: number[] = [];
   for (const r of rows) {
     const side = mine(r);
@@ -149,8 +159,15 @@ function recordFor(rows: MatchRowForTeam[], mine: (r: MatchRowForTeam) => Side |
     const againstRuns = regular.filter((s) => s.batting !== side).reduce((a, s) => a + s.runs, 0);
     for (const s of regular.filter((x) => x.batting === side)) { rec.totalRuns += s.runs; totals.push(s.runs); }
     const opponent = side === 1 ? r.n2 : r.n1;
-    const h = h2h.get(opponent.toLowerCase()) ?? { opponent, played: 0, won: 0, lost: 0, tied: 0 };
+    const h = h2h.get(opponent.toLowerCase()) ?? { opponent, played: 0, won: 0, lost: 0, tied: 0, highestFor: null, lowestFor: null, highestAgainst: null, lowestAgainst: null };
     h.played++; if (result === "win") h.won++; else if (result === "loss") h.lost++; else if (result === "tie") h.tied++;
+    if (regular.length) {
+      h.highestFor = h.highestFor === null ? forRuns : Math.max(h.highestFor, forRuns);
+      h.lowestFor = h.lowestFor === null ? forRuns : Math.min(h.lowestFor, forRuns);
+      h.highestAgainst = h.highestAgainst === null ? againstRuns : Math.max(h.highestAgainst, againstRuns);
+      h.lowestAgainst = h.lowestAgainst === null ? againstRuns : Math.min(h.lowestAgainst, againstRuns);
+    }
+    rec.history.push({ matchId: r.id, when: r.when, opponent, result, runsFor: regular.length ? forRuns : null, runsAgainst: regular.length ? againstRuns : null });
     h2h.set(opponent.toLowerCase(), h);
     if (rec.recent.length < 5) rec.recent.push({ matchId: r.id, when: r.when, opponent, text: res?.text ?? "", result, runsFor: regular.length ? forRuns : null, runsAgainst: regular.length ? againstRuns : null });
   }
@@ -159,6 +176,7 @@ function recordFor(rows: MatchRowForTeam[], mine: (r: MatchRowForTeam) => Side |
   rec.highest = totals.length ? Math.max(...totals) : null;
   rec.lowest = totals.length ? Math.min(...totals) : null;
   rec.headToHead = Array.from(h2h.values()).sort((a, b) => b.played - a.played || a.opponent.localeCompare(b.opponent));
+  rec.history.reverse();   // the matches were read newest first
   return rec;
 }
 

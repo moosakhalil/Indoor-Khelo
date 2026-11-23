@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { WinTab, WormTab } from "@/components/AnalyticsParts";
 import { BallsTab, ChangesTab, OversTab, ScorecardTab, StatsTab, SummaryTab } from "@/components/ReportParts";
 import { buildState } from "@/lib/engine/engine";
 import { formatWhen } from "@/lib/matchRules";
@@ -12,7 +13,7 @@ import { getZone } from "@/lib/zone";
 export const metadata: Metadata = { title: "Match report", robots: { index: false, follow: false } };
 export const dynamic = "force-dynamic";
 
-const TABS = [["summary", "Summary"], ["scorecard", "Scorecard"], ["balls", "Ball by ball"], ["overs", "Over by over"], ["stats", "Match stats"], ["changes", "Changes"]] as const;
+const TABS = [["summary", "Summary"], ["scorecard", "Scorecard"], ["balls", "Ball by ball"], ["overs", "Over by over"], ["stats", "Match stats"], ["worm", "Worm"], ["win", "Win chance"], ["changes", "Changes"]] as const;
 
 export default async function PublicReport({ params, searchParams }: { params: Promise<{ token: string }>; searchParams: Promise<{ tab?: string }> }) {
   const { token } = await params;
@@ -44,6 +45,8 @@ export default async function PublicReport({ params, searchParams }: { params: P
         {tab === "balls" && <BallsTab m={m} communityId={null} matchId={match.id} />}
         {tab === "overs" && <OversTab m={m} />}
         {tab === "stats" && <StatsTab m={m} communityId={null} />}
+        {tab === "worm" && <WormTab m={m} />}
+        {tab === "win" && <WinTab m={m} />}
         {tab === "changes" && <ChangesTab m={m} />}
         <section className="card center">
           <b>Scored with Indoor Khelo</b>

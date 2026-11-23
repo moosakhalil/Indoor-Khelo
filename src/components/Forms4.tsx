@@ -307,7 +307,7 @@ export function TossForm({ communityId, matchId, sideNames, winner, decision }: 
 }
 
 /* ---------- rematch ---------- */
-export function RematchForm({ communityId, matchId }: { communityId: string; matchId: string }) {
+export function RematchForm({ communityId, matchId, seriesName, canMakeSeries }: { communityId: string; matchId: string; seriesName?: string | null; canMakeSeries?: boolean }) {
   const [state, action, pending] = useActionState(rematchAction, initial);
   const fe = state.fieldErrors ?? {};
   return (
@@ -318,8 +318,15 @@ export function RematchForm({ communityId, matchId }: { communityId: string; mat
       <label className="lb" htmlFor="rm-when" style={{ marginTop: 0 }}>Date and time of the rematch</label>
       <input id="rm-when" type="datetime-local" name="when" className={`field${fe.when ? " bad" : ""}`} aria-invalid={!!fe.when} />
       <Err text={fe.when} />
+      {seriesName && <p className="banner mute" style={{ margin: "10px 0 0" }}>This match is in the series <b>{seriesName}</b>. The new match joins it.</p>}
+      {canMakeSeries && (
+        <label className="check" style={{ marginTop: 12 }}>
+          <input type="checkbox" name="makeSeries" />
+          <span><b>Make this a series</b><small className="muted" style={{ display: "block" }}>The first match and this rematch become a series between the same two teams. You can keep playing more.</small></span>
+        </label>
+      )}
       {state.error && !state.fieldErrors && <Err text={state.error} />}
-      <button className="btn gold" disabled={pending} style={{ marginTop: 12 }}>{pending ? "Creating…" : "Create rematch"}</button>
+      <button className="btn gold" disabled={pending} style={{ marginTop: 12 }}>{pending ? "Creating…" : seriesName ? "Play another match in this series" : "Create rematch"}</button>
     </form>
   );
 }

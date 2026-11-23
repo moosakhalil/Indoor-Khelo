@@ -4,6 +4,7 @@ import Frame from "@/components/Frame";
 import { RematchForm } from "@/components/Forms4";
 import { requireMember } from "@/lib/community";
 import { getMatch, listLineup } from "@/lib/matches";
+import { seriesOfMatch } from "@/lib/seriesDb";
 import { requireAcceptedUser } from "@/lib/session";
 
 export const metadata: Metadata = { title: "Rematch" };
@@ -15,7 +16,7 @@ export default async function RematchPage({ params }: { params: Promise<{ id: st
   await requireMember(id, user.id);
   const m = await getMatch(id, matchId, user.id);
   if (!m) notFound();
-  const lineup = await listLineup(id, matchId);
+  const [lineup, series] = await Promise.all([listLineup(id, matchId), seriesOfMatch(id, matchId)]);
   return (
     <Frame communityId={id} title="Rematch" back={`/c/${id}/matches/${matchId}`}>
       <div className="stack">
@@ -27,7 +28,7 @@ export default async function RematchPage({ params }: { params: Promise<{ id: st
             <li>It is a separate match. The first match and the permanent squads stay exactly as they are.</li>
           </ul>
         </section>
-        <section className="card"><RematchForm communityId={id} matchId={matchId} /></section>
+        <section className="card"><RematchForm communityId={id} matchId={matchId} seriesName={series?.status === "open" ? series.name : null} canMakeSeries={!series} /></section>
       </div>
     </Frame>
   );

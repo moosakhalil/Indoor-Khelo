@@ -5,7 +5,7 @@ import { auth } from "@/lib/auth/server";
 // "/api/session" is the small route that renews the session cookie for those public pages.
 export default auth.middleware({
   loginUrl: "/",
-  publicRoutes: ["/", "/offline", "/join", "/api/session", "/r"],
+  publicRoutes: ["/", "/offline", "/join", "/api/session", "/r", "/p"],
 });
 
 export const config = {

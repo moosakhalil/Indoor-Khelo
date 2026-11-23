@@ -9,6 +9,7 @@ import { requireMember } from "@/lib/community";
 import { getPlayerInCommunity } from "@/lib/profile";
 import { playerLines } from "@/lib/reports";
 import { requireAcceptedUser } from "@/lib/session";
+import { listSeries } from "@/lib/seriesDb";
 import { listTeams, teamsOfPlayer } from "@/lib/teams";
 import { BATTING_HANDS, BATTING_POSITIONS, BOWLING_STYLES, PLAYING_ROLES, labelOf } from "@/lib/validation";
 
@@ -16,7 +17,7 @@ export const metadata: Metadata = { title: "Player" };
 export const dynamic = "force-dynamic";
 
 const DATE = /^\d{4}-\d{2}-\d{2}$/;
-type Q = { tab?: string; lines?: string; scope?: string; team?: string; from?: string; to?: string };
+type Q = { tab?: string; lines?: string; scope?: string; team?: string; from?: string; to?: string; series?: string };
 
 export default async function PlayerPage({ params, searchParams }: { params: Promise<{ id: string; userId: string }>; searchParams: Promise<Q> }) {
   const { id, userId } = await params;
@@ -25,7 +26,7 @@ export default async function PlayerPage({ params, searchParams }: { params: Pro
   const { membership } = await requireMember(id, me.id);
   const p = await getPlayerInCommunity(id, userId);
   if (!p) notFound();
-  const [teams, allTeams] = await Promise.all([teamsOfPlayer(id, userId), listTeams(id)]);
+  const [teams, allTeams, allSeries] = await Promise.all([teamsOfPlayer(id, userId), listTeams(id), listSeries(id)]);
   const isMe = me.id === userId;
 
   // filters live in the address, so a stats page can be shared or reloaded exactly as it is
@@ -33,14 +34,16 @@ export default async function PlayerPage({ params, searchParams }: { params: Pro
   const to = q.to && DATE.test(q.to) ? q.to : null;
   const teamId = q.team && allTeams.some((t) => t.id === q.team) ? q.team : null;
   const allCommunities = q.scope === "all";
-  const hasFilters = !!(from || to || teamId || allCommunities);
-  const lines = await playerLines(id, userId, { allCommunities, teamId, from, to });
+  const seriesId = q.series && allSeries.some((x) => x.id === q.series) ? q.series : null;
+  const hasFilters = !!(from || to || teamId || allCommunities || seriesId);
+  const lines = await playerLines(id, userId, { allCommunities, teamId, from, to, seriesId });
   const career = careerOf(lines);
   const tab: StatTab = STAT_TABS.some(([k]) => k === q.tab) ? (q.tab as StatTab) : "overview";
   const linesFilter = q.lines === "bat" || q.lines === "bowl" ? q.lines : "all";
   const keep = new URLSearchParams();
   if (allCommunities) keep.set("scope", "all");
   if (teamId) keep.set("team", teamId);
+  if (seriesId) keep.set("series", seriesId);
   if (from) keep.set("from", from);
   if (to) keep.set("to", to);
   const base = `/c/${id}/players/${userId}${keep.toString() ? `?${keep.toString()}` : ""}`;
@@ -86,6 +89,12 @@ export default async function PlayerPage({ params, searchParams }: { params: Pro
               <select id="f-team" name="team" className="field" defaultValue={teamId ?? ""}><option value="">Any team</option>{allTeams.map((t) => <option key={t.id} value={t.id}>{t.name}</option>)}</select>
             </div>
           </div>
+          {allSeries.length > 0 && (
+            <>
+              <label className="lb" htmlFor="f-series">Series</label>
+              <select id="f-series" name="series" className="field" defaultValue={seriesId ?? ""}><option value="">Any match</option>{allSeries.map((x) => <option key={x.id} value={x.id}>{x.name}</option>)}</select>
+            </>
+          )}
           <div className="two">
             <div><label className="lb" htmlFor="f-from">From</label><input id="f-from" type="date" name="from" className="field" defaultValue={from ?? ""} /></div>
             <div><label className="lb" htmlFor="f-to">To</label><input id="f-to" type="date" name="to" className="field" defaultValue={to ?? ""} /></div>
@@ -104,7 +113,10 @@ export default async function PlayerPage({ params, searchParams }: { params: Pro
             </p>
           </section>
         ) : (
-          <PlayerStats c={career} lines={lines} tab={tab} base={base} linesFilter={linesFilter} communityId={id} />
+          <>
+            <PlayerStats c={career} lines={lines} tab={tab} base={base} linesFilter={linesFilter} communityId={id} />
+            <Link href={`/c/${id}/players/${userId}/analytics`} className="btn ghost">Analytics: form, where the runs come from, batter v bowler</Link>
+          </>
         )}
 
         {isMe && <Link href={`/c/${id}/profile/edit`} className="btn gold">Edit my profile</Link>}
