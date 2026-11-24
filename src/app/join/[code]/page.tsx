@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import { redirect } from "next/navigation";
-import CommunityLogo from "@/components/CommunityLogo";
-import { RequestJoinForm } from "@/components/Forms";
+import EnRequestJoin from "@/components/EnRequestJoin";
+import { EnFullCard, EnInvalid, EnInviteCard, EnNextSteps } from "@/components/EnInvite";
+import { EnTopBar } from "@/components/EnParts";
 import SignInButton from "@/components/SignInButton";
 import { approvedCount, getCommunityByCode, getMembership } from "@/lib/community";
 import { one } from "@/lib/db";
@@ -18,17 +18,7 @@ export default async function JoinPreviewPage({ params, searchParams }: { params
   const code = normalizeInviteCode(decodeURIComponent(raw));
   const community = code ? await getCommunityByCode(code) : null;
 
-  if (!community || !code) {
-    return (
-      <main className="app">
-        <div className="stack center" style={{ paddingTop: 48 }}>
-          <h1>This invite is not valid</h1>
-          <p className="muted">The link or code may be wrong, or the Admin replaced it. Ask your Admin for a new one.</p>
-          <Link className="btn gold" href="/join">Try another code</Link>
-        </div>
-      </main>
-    );
-  }
+  if (!community || !code) return <EnInvalid />;
 
   const user = await getSessionUser({ refreshTo: rf === "1" ? undefined : `/join/${code}` });
   if (user && !user.termsAccepted) redirect(`/terms?next=${encodeURIComponent(`/join/${code}`)}`);
@@ -45,31 +35,30 @@ export default async function JoinPreviewPage({ params, searchParams }: { params
   }
 
   const full = members >= COMMUNITY_MEMBER_CAP;
+  const approval = community.approval_required;
   return (
-    <main className="app">
-      <div className="stack" style={{ paddingTop: 24 }}>
-        <p className="muted center" style={{ margin: 0 }}>You were invited to join</p>
-        <section className="card center">
-          <div style={{ display: "flex", justifyContent: "center" }}><CommunityLogo name={community.name} big /></div>
-          <h1 style={{ fontSize: "1.4rem", marginTop: 10 }}>{community.name}</h1>
-          {community.location && <p className="muted small" style={{ margin: "2px 0 0" }}>{community.location}</p>}
-          {community.description && <p className="muted" style={{ margin: "10px 0 0" }}>{community.description}</p>}
-        </section>
-        <section className="card list">
-          <div className="item space"><span className="muted">Members</span><b>{members}</b></div>
-          <div className="item space"><span className="muted">Admin</span><b>{admin?.name ?? "—"}</b></div>
-          <div className="item space"><span className="muted">Joining</span><b>{community.approval_required ? "Admin approval needed" : "Open, join straight away"}</b></div>
-        </section>
-        {full ? (
-          <div className="banner red">This community already has 99 members, so no one else can join.</div>
-        ) : user ? (
-          <RequestJoinForm code={code} approval={community.approval_required} />
-        ) : (
-          <>
-            <SignInButton next={`/join/${code}`} />
-            <p className="muted small center" style={{ margin: 0 }}>Sign in with Google to join. You will then pick your player number.</p>
-          </>
-        )}
+    <main className="app en-app en-wide">
+      <EnTopBar user={user ? { name: user.name } : undefined} />
+      <div className="en-col">
+        <div className="en-split en-invite-split">
+          <EnInviteCard community={community} members={members} adminName={admin?.name ?? "—"} />
+          {full ? (
+            <EnFullCard cap={COMMUNITY_MEMBER_CAP} />
+          ) : (
+            <section className="en-card en-action" aria-labelledby="act-h">
+              <h2 id="act-h" className="en-action-h">{user ? (approval ? "Ask to join" : "Join now") : "Sign in to join"}</h2>
+              {user ? (
+                <EnRequestJoin code={code} approval={approval} />
+              ) : (
+                <>
+                  <SignInButton next={`/join/${code}`} />
+                  <p className="en-hint center"><span>One tap with Google. Only your name is used.</span></p>
+                </>
+              )}
+              <EnNextSteps approval={approval} signedIn={!!user} />
+            </section>
+          )}
+        </div>
       </div>
     </main>
   );

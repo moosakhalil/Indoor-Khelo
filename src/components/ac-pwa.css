@@ -1,0 +1,50 @@
+/* Phase G3 (UI redesign): the app banners (offline, new version, install help). Mounted once in the root layout, so this file loads on
+   every page; every class starts with ac-. Flat colour (no blur), inline icons only. */
+
+.ac-toasts, .ac-bottom { position: fixed; left: 0; right: 0; z-index: 60; display: flex; flex-direction: column; gap: 8px; align-items: center; padding: 0 12px; pointer-events: none; }
+.ac-toasts { top: 0; padding-top: max(8px, env(safe-area-inset-top, 0px)); }
+.ac-toasts:empty { display: none; }
+.ac-bottom { bottom: 0; padding-bottom: max(10px, env(safe-area-inset-bottom, 0px)); gap: 0; }
+.ac-toasts > *, .ac-bottom > .ac-toast { pointer-events: auto; width: 100%; max-width: 520px; }
+
+.ac-toast {
+  display: flex; align-items: center; gap: 12px; padding: 12px 14px; border-radius: 18px;
+  background: #1a2442; border: 1px solid #2b3a5f; box-shadow: 0 10px 28px rgba(0, 0, 0, 0.5);
+  color: var(--white);
+}
+.ac-toast.stacked { flex-direction: column; align-items: stretch; gap: 12px; }
+.ac-trow { display: flex; align-items: flex-start; gap: 12px; }
+.ac-tt { display: flex; flex-direction: column; gap: 2px; min-width: 0; flex: 1; }
+.ac-tt b { font-size: 0.95rem; font-weight: 800; line-height: 1.25; }
+.ac-tt small { color: #b4bfd8; font-size: 0.8rem; line-height: 1.4; }
+.ac-tic { width: 44px; height: 44px; border-radius: 12px; display: inline-flex; align-items: center; justify-content: center; flex: 0 0 auto; background: #232f52; }
+.ac-tic.orange { color: var(--orange); }
+.ac-tic.green { color: #4be38a; }
+.ac-tic.blue { color: var(--blue); }
+.ac-appicon { width: 44px; height: 44px; border-radius: 11px; flex: 0 0 auto; }
+
+.ac-two { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.ac-btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 44px; padding: 0 16px; border-radius: 12px; font-weight: 800; font-size: 0.92rem; background: #232f52; border: 1.5px solid #34456f; color: var(--white); }
+.ac-btn.gold { background: var(--gold); border-color: var(--gold); color: var(--night); }
+.ac-btn.ac-inline { flex: 0 0 auto; }
+.ac-btn:hover { filter: brightness(1.08); }
+
+/* the address a person can select by hand when the browser will not copy for them */
+.ac-addr { width: 100%; min-height: 44px; padding: 8px 12px; border-radius: 12px; border: 1px solid #34456f; background: var(--night); color: var(--white); font: inherit; font-size: 0.82rem; }
+.ac-copied { margin: -4px 0 0; min-height: 0; color: #7fe0a8; font-size: 0.82rem; font-weight: 600; }
+.ac-copied:empty { display: none; }
+
+/* iPhone Safari: the card sits above the Safari toolbar, an arrow points down at the Share button */
+.ac-steps { gap: 10px; }
+.ac-st { font-size: 1rem; font-weight: 800; }
+.ac-steps ol { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 10px; }
+.ac-steps li { display: flex; align-items: flex-start; gap: 10px; font-size: 0.9rem; line-height: 1.4; }
+.ac-steps li i { font-style: normal; font-weight: 800; width: 26px; height: 26px; border-radius: 50%; background: var(--gold); color: var(--night); display: inline-flex; align-items: center; justify-content: center; flex: 0 0 auto; font-size: 0.8rem; }
+.ac-key { display: inline-flex; vertical-align: middle; font-style: normal; margin-left: 4px; width: 28px; height: 28px; align-items: center; justify-content: center; border-radius: 8px; background: #232f52; border: 1px solid var(--gold); color: var(--gold); }
+.ac-arrow { width: 16px; height: 16px; background: #1a2442; border-right: 1px solid #2b3a5f; border-bottom: 1px solid #2b3a5f; transform: translateY(-8px) rotate(45deg); margin-bottom: -2px; pointer-events: none; }
+@media (prefers-reduced-motion: no-preference) {
+  .ac-arrow { animation: acNudge 1.6s ease-in-out infinite; }
+  @keyframes acNudge { 0%, 100% { transform: translateY(-8px) rotate(45deg); } 50% { transform: translateY(-3px) rotate(45deg); } }
+  .ac-toast { animation: acIn 0.18s ease-out; }
+  @keyframes acIn { from { opacity: 0; transform: translateY(-6px); } to { opacity: 1; transform: none; } }
+}

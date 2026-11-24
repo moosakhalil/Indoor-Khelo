@@ -1,10 +1,10 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import Frame from "@/components/Frame";
-import { linkMatchesAction } from "@/app/actions7";
+import LinkMatchesForm from "@/components/LinkMatchesForm";
 import { getBooking, linkedMatches, matchesToLink } from "@/lib/bookings";
 import { requireMember } from "@/lib/community";
-import { formatWhen } from "@/lib/matchRules";
+import { formatWhen, STATUS_LABEL, type MatchStatus } from "@/lib/matchRules";
 import { requireAcceptedUser } from "@/lib/session";
 import { getZone } from "@/lib/zone";
 
@@ -18,24 +18,11 @@ export default async function LinkPage({ params }: { params: Promise<{ id: strin
   const b = await getBooking(id, bookingId);
   if (!b) notFound();
   const [matches, linked, tz] = await Promise.all([matchesToLink(id), linkedMatches(bookingId), getZone()]);
-  const on = new Set(linked.map((m) => m.id));
   return (
-    <Frame communityId={id} title="Link matches" back={`/c/${id}/payments/${bookingId}`}>
-      <form action={linkMatchesAction} className="stack">
-        <input type="hidden" name="communityId" value={id} /><input type="hidden" name="bookingId" value={bookingId} />
-        <p className="muted" style={{ margin: 0 }}>Choose the matches played in this booking: one, or several (for example three on a Saturday).</p>
-        {matches.length === 0 ? <div className="card center muted">No matches yet. Create matches first.</div> : (
-          <section className="card list">
-            {matches.map((m) => (
-              <label key={m.id} className="item" style={{ cursor: "pointer" }}>
-                <input type="checkbox" name="match" value={m.id} defaultChecked={on.has(m.id)} style={{ width: 24, height: 24, accentColor: "var(--gold)" }} />
-                <span className="t grow"><b>{m.name}</b><small>{formatWhen(m.scheduled_at, tz)} · {m.status}</small></span>
-              </label>
-            ))}
-          </section>
-        )}
-        <button className="btn gold">Save linked matches</button>
-      </form>
+    <Frame communityId={id} title="Link matches" subtitle={<small className="muted pb-sub1">{b.venue_name} · {formatWhen(b.starts_at, tz)}</small>} back={`/c/${id}/payments/${bookingId}`}>
+      <LinkMatchesForm
+        communityId={id} bookingId={bookingId} createHref={`/c/${id}/matches/new`} linked={linked.map((m) => m.id)}
+        matches={matches.map((m) => ({ id: m.id, name: m.name, status: m.status, statusLabel: STATUS_LABEL[m.status as MatchStatus] ?? m.status, when: formatWhen(m.scheduled_at, tz) }))} />
     </Frame>
   );
 }

@@ -1,0 +1,930 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`GOLDEN: events made by the pad (must not change in the redesign) > 0 1 2 3 4 5 6 with the new bowler after the over 1`] = `
+[
+  {
+    "payload": {
+      "runs": 0,
+    },
+    "reason": undefined,
+    "seq": 3,
+    "type": "ball",
+  },
+  {
+    "payload": {
+      "runs": 1,
+    },
+    "reason": undefined,
+    "seq": 4,
+    "type": "ball",
+  },
+  {
+    "payload": {
+      "runs": 2,
+    },
+    "reason": undefined,
+    "seq": 5,
+    "type": "ball",
+  },
+  {
+    "payload": {
+      "runs": 3,
+    },
+    "reason": undefined,
+    "seq": 6,
+    "type": "ball",
+  },
+  {
+    "payload": {
+      "runs": 4,
+    },
+    "reason": undefined,
+    "seq": 7,
+    "type": "ball",
+  },
+  {
+    "payload": {
+      "runs": 5,
+    },
+    "reason": undefined,
+    "seq": 8,
+    "type": "ball",
+  },
+  {
+    "payload": {
+      "player": "bbbbbbbb-0000-4000-8000-000000000002",
+    },
+    "reason": undefined,
+    "seq": 9,
+    "type": "bowler",
+  },
+  {
+    "payload": {
+      "runs": 6,
+    },
+    "reason": undefined,
+    "seq": 10,
+    "type": "ball",
+  },
+]
+`;
+
+exports[`GOLDEN: events made by the pad (must not change in the redesign) > More: byes and leg-byes (sheet) make a ball with the extra kind and runs 1`] = `
+[
+  {
+    "payload": {
+      "extra": "bye",
+      "runs": 2,
+    },
+    "reason": undefined,
+    "seq": 3,
+    "type": "ball",
+  },
+  {
+    "payload": {
+      "extra": "legbye",
+      "runs": 1,
+    },
+    "reason": undefined,
+    "seq": 4,
+    "type": "ball",
+  },
+]
+`;
+
+exports[`GOLDEN: events made by the pad (must not change in the redesign) > More: pause, resume (from the paused bar), swap strike 1`] = `
+[
+  {
+    "payload": {},
+    "reason": undefined,
+    "seq": 3,
+    "type": "pause",
+  },
+  {
+    "payload": {},
+    "reason": undefined,
+    "seq": 4,
+    "type": "resume",
+  },
+  {
+    "payload": {},
+    "reason": undefined,
+    "seq": 5,
+    "type": "swap_strike",
+  },
+]
+`;
+
+exports[`GOLDEN: events made by the pad (must not change in the redesign) > RUN OUT: who is out, runs completed, the fielder and the next batter 1`] = `
+[
+  {
+    "payload": {
+      "extra": null,
+      "runs": 1,
+      "wicket": {
+        "fielder": "bbbbbbbb-0000-4000-8000-000000000003",
+        "newEnd": null,
+        "out": "aaaaaaaa-0000-4000-8000-000000000002",
+        "type": "run_out",
+      },
+    },
+    "reason": undefined,
+    "seq": 3,
+    "type": "ball",
+  },
+  {
+    "payload": {
+      "end": null,
+      "player": "aaaaaaaa-0000-4000-8000-000000000005",
+    },
+    "reason": undefined,
+    "seq": 4,
+    "type": "batter_in",
+  },
+]
+`;
+
+exports[`GOLDEN: events made by the pad (must not change in the redesign) > UNDO several times (the ball, then the one before), straight after the innings start too 1`] = `
+[
+  {
+    "payload": {
+      "runs": 4,
+    },
+    "reason": undefined,
+    "seq": 3,
+    "type": "ball",
+  },
+  {
+    "payload": {},
+    "reason": undefined,
+    "seq": 4,
+    "type": "undo",
+  },
+  {
+    "payload": {
+      "runs": 1,
+    },
+    "reason": undefined,
+    "seq": 5,
+    "type": "ball",
+  },
+  {
+    "payload": {
+      "runs": 2,
+    },
+    "reason": undefined,
+    "seq": 6,
+    "type": "ball",
+  },
+  {
+    "payload": {},
+    "reason": undefined,
+    "seq": 7,
+    "type": "undo",
+  },
+  {
+    "payload": {},
+    "reason": undefined,
+    "seq": 8,
+    "type": "undo",
+  },
+  {
+    "payload": {},
+    "reason": undefined,
+    "seq": 9,
+    "type": "undo",
+  },
+]
+`;
+
+exports[`GOLDEN: events made by the pad (must not change in the redesign) > an over finished, the bowler prompt dismissed: Choose the bowler for the next over, Undo the last ball 1`] = `
+[
+  {
+    "payload": {},
+    "reason": undefined,
+    "seq": 9,
+    "type": "undo",
+  },
+]
+`;
+
+exports[`GOLDEN: events made by the pad (must not change in the redesign) > free hit: the banner is shown and the next ball clears it 1`] = `
+[
+  {
+    "payload": {
+      "runs": 6,
+    },
+    "reason": undefined,
+    "seq": 4,
+    "type": "ball",
+  },
+]
+`;
+
+exports[`GOLDEN: events made by the pad (must not change in the redesign) > innings break: openers and bowler for innings 2 make innings_start 1`] = `
+[
+  {
+    "payload": {
+      "bowler": "aaaaaaaa-0000-4000-8000-000000000001",
+      "nonStriker": "bbbbbbbb-0000-4000-8000-000000000002",
+      "striker": "bbbbbbbb-0000-4000-8000-000000000001",
+    },
+    "reason": undefined,
+    "seq": 9,
+    "type": "innings_start",
+  },
+]
+`;
+
+exports[`GOLDEN: events made by the pad (must not change in the redesign) > needing a batter: Undo the last ball takes the wicket back 1`] = `
+[
+  {
+    "payload": {},
+    "reason": undefined,
+    "seq": 4,
+    "type": "undo",
+  },
+]
+`;
+
+exports[`GOLDEN: events made by the pad (must not change in the redesign) > offline: balls are kept on the phone, nothing is sent, and they go in order when the signal returns 1`] = `
+[
+  {
+    "payload": {
+      "runs": 6,
+    },
+    "reason": undefined,
+    "seq": 3,
+    "type": "ball",
+  },
+  {
+    "payload": {
+      "runs": 4,
+    },
+    "reason": undefined,
+    "seq": 4,
+    "type": "ball",
+  },
+  {
+    "payload": {
+      "runs": 2,
+    },
+    "reason": undefined,
+    "seq": 5,
+    "type": "ball",
+  },
+]
+`;
+
+exports[`GOLDEN: events made by the pad (must not change in the redesign) > paused match from the server: the Resume bar makes a resume, the keys stay locked until then 1`] = `
+[
+  {
+    "payload": {},
+    "reason": undefined,
+    "seq": 4,
+    "type": "resume",
+  },
+]
+`;
+
+exports[`GOLDEN: events made by the pad (must not change in the redesign) > scores level: No, it is a tie, then Finish the match; Undo is offered at each step 1`] = `
+[
+  {
+    "payload": {
+      "play": false,
+    },
+    "reason": undefined,
+    "seq": 16,
+    "type": "super_over_decision",
+  },
+  {
+    "payload": {},
+    "reason": undefined,
+    "seq": 17,
+    "type": "undo",
+  },
+  {
+    "payload": {
+      "play": false,
+    },
+    "reason": undefined,
+    "seq": 18,
+    "type": "super_over_decision",
+  },
+  {
+    "payload": {},
+    "reason": undefined,
+    "seq": 19,
+    "type": "finish",
+  },
+]
+`;
+
+exports[`GOLDEN: events made by the pad (must not change in the redesign) > scores level: Yes, super over 1`] = `
+[
+  {
+    "payload": {
+      "play": true,
+    },
+    "reason": undefined,
+    "seq": 16,
+    "type": "super_over_decision",
+  },
+]
+`;
+
+exports[`GOLDEN: events made by the pad (must not change in the redesign) > scores level: Yes, super over 2`] = `
+[
+  {
+    "payload": {
+      "bowler": "aaaaaaaa-0000-4000-8000-000000000002",
+      "nonStriker": "bbbbbbbb-0000-4000-8000-000000000004",
+      "striker": "bbbbbbbb-0000-4000-8000-000000000003",
+    },
+    "reason": undefined,
+    "seq": 17,
+    "type": "innings_start",
+  },
+]
+`;
+
+exports[`GOLDEN: events made by the pad (must not change in the redesign) > start refuses the same player as striker and non-striker: nothing is made 1`] = `
+[
+  {
+    "payload": {
+      "battingFirst": 2,
+      "overs": 6,
+      "players": [
+        {
+          "id": "aaaaaaaa-0000-4000-8000-000000000001",
+          "kind": "member",
+          "name": "Alpha1",
+          "number": 1,
+          "side": 1,
+          "userId": "cccccccc-0000-4000-8000-000000000001",
+        },
+        {
+          "id": "aaaaaaaa-0000-4000-8000-000000000002",
+          "kind": "member",
+          "name": "Alpha2",
+          "number": 2,
+          "side": 1,
+          "userId": "cccccccc-0000-4000-8000-000000000002",
+        },
+        {
+          "id": "aaaaaaaa-0000-4000-8000-000000000003",
+          "kind": "member",
+          "name": "Alpha3",
+          "number": 3,
+          "side": 1,
+          "userId": "cccccccc-0000-4000-8000-000000000003",
+        },
+        {
+          "id": "aaaaaaaa-0000-4000-8000-000000000004",
+          "kind": "member",
+          "name": "Alpha4",
+          "number": 4,
+          "side": 1,
+          "userId": "cccccccc-0000-4000-8000-000000000004",
+        },
+        {
+          "id": "aaaaaaaa-0000-4000-8000-000000000005",
+          "kind": "member",
+          "name": "Alpha5",
+          "number": 5,
+          "side": 1,
+          "userId": "cccccccc-0000-4000-8000-000000000005",
+        },
+        {
+          "id": "aaaaaaaa-0000-4000-8000-000000000006",
+          "kind": "member",
+          "name": "Alpha6",
+          "number": 6,
+          "side": 1,
+          "userId": "cccccccc-0000-4000-8000-000000000006",
+        },
+        {
+          "id": "bbbbbbbb-0000-4000-8000-000000000001",
+          "kind": "member",
+          "name": "Bravo1",
+          "number": 11,
+          "side": 2,
+          "userId": "dddddddd-0000-4000-8000-000000000001",
+        },
+        {
+          "id": "bbbbbbbb-0000-4000-8000-000000000002",
+          "kind": "member",
+          "name": "Bravo2",
+          "number": 12,
+          "side": 2,
+          "userId": "dddddddd-0000-4000-8000-000000000002",
+        },
+        {
+          "id": "bbbbbbbb-0000-4000-8000-000000000003",
+          "kind": "member",
+          "name": "Bravo3",
+          "number": 13,
+          "side": 2,
+          "userId": "dddddddd-0000-4000-8000-000000000003",
+        },
+        {
+          "id": "bbbbbbbb-0000-4000-8000-000000000004",
+          "kind": "member",
+          "name": "Bravo4",
+          "number": 14,
+          "side": 2,
+          "userId": "dddddddd-0000-4000-8000-000000000004",
+        },
+        {
+          "id": "bbbbbbbb-0000-4000-8000-000000000005",
+          "kind": "member",
+          "name": "Bravo5",
+          "number": 15,
+          "side": 2,
+          "userId": "dddddddd-0000-4000-8000-000000000005",
+        },
+        {
+          "id": "bbbbbbbb-0000-4000-8000-000000000006",
+          "kind": "member",
+          "name": "Bravo6",
+          "number": 16,
+          "side": 2,
+          "userId": "dddddddd-0000-4000-8000-000000000006",
+        },
+      ],
+      "playersPerSide": 6,
+      "rules": {
+        "ballsPerOver": 6,
+        "bowlerLimit": {
+          "mode": "none",
+        },
+        "byesCountAsBalls": true,
+        "dismissals": [
+          "bowled",
+          "caught",
+          "lbw",
+          "stumped",
+          "hit_wicket",
+          "run_out",
+          "retired_out",
+        ],
+        "freeHit": true,
+        "innings": 2,
+        "lastBatterAlone": true,
+        "legByesCountAsBalls": true,
+        "noBallRuns": 1,
+        "noBallsReBowled": true,
+        "overthrows": true,
+        "retiredCanReturn": true,
+        "sameBowlerTwoInARow": false,
+        "superOver": "ask",
+        "version": 1,
+        "wideRuns": 1,
+        "widesReBowled": true,
+      },
+      "sides": [
+        "Alpha",
+        "Bravo",
+      ],
+      "toss": null,
+    },
+    "reason": undefined,
+    "seq": 1,
+    "type": "match_start",
+  },
+  {
+    "payload": {
+      "bowler": "aaaaaaaa-0000-4000-8000-000000000001",
+      "nonStriker": "bbbbbbbb-0000-4000-8000-000000000002",
+      "striker": "bbbbbbbb-0000-4000-8000-000000000001",
+    },
+    "reason": undefined,
+    "seq": 2,
+    "type": "innings_start",
+  },
+]
+`;
+
+exports[`GOLDEN: events made by the pad (must not change in the redesign) > start the match with the toss entered by hand (Bravo won, chose to bowl): Alpha bat 1`] = `
+[
+  {
+    "payload": {
+      "battingFirst": 1,
+      "overs": 6,
+      "players": [
+        {
+          "id": "aaaaaaaa-0000-4000-8000-000000000001",
+          "kind": "member",
+          "name": "Alpha1",
+          "number": 1,
+          "side": 1,
+          "userId": "cccccccc-0000-4000-8000-000000000001",
+        },
+        {
+          "id": "aaaaaaaa-0000-4000-8000-000000000002",
+          "kind": "member",
+          "name": "Alpha2",
+          "number": 2,
+          "side": 1,
+          "userId": "cccccccc-0000-4000-8000-000000000002",
+        },
+        {
+          "id": "aaaaaaaa-0000-4000-8000-000000000003",
+          "kind": "member",
+          "name": "Alpha3",
+          "number": 3,
+          "side": 1,
+          "userId": "cccccccc-0000-4000-8000-000000000003",
+        },
+        {
+          "id": "aaaaaaaa-0000-4000-8000-000000000004",
+          "kind": "member",
+          "name": "Alpha4",
+          "number": 4,
+          "side": 1,
+          "userId": "cccccccc-0000-4000-8000-000000000004",
+        },
+        {
+          "id": "aaaaaaaa-0000-4000-8000-000000000005",
+          "kind": "member",
+          "name": "Alpha5",
+          "number": 5,
+          "side": 1,
+          "userId": "cccccccc-0000-4000-8000-000000000005",
+        },
+        {
+          "id": "aaaaaaaa-0000-4000-8000-000000000006",
+          "kind": "member",
+          "name": "Alpha6",
+          "number": 6,
+          "side": 1,
+          "userId": "cccccccc-0000-4000-8000-000000000006",
+        },
+        {
+          "id": "bbbbbbbb-0000-4000-8000-000000000001",
+          "kind": "member",
+          "name": "Bravo1",
+          "number": 11,
+          "side": 2,
+          "userId": "dddddddd-0000-4000-8000-000000000001",
+        },
+        {
+          "id": "bbbbbbbb-0000-4000-8000-000000000002",
+          "kind": "member",
+          "name": "Bravo2",
+          "number": 12,
+          "side": 2,
+          "userId": "dddddddd-0000-4000-8000-000000000002",
+        },
+        {
+          "id": "bbbbbbbb-0000-4000-8000-000000000003",
+          "kind": "member",
+          "name": "Bravo3",
+          "number": 13,
+          "side": 2,
+          "userId": "dddddddd-0000-4000-8000-000000000003",
+        },
+        {
+          "id": "bbbbbbbb-0000-4000-8000-000000000004",
+          "kind": "member",
+          "name": "Bravo4",
+          "number": 14,
+          "side": 2,
+          "userId": "dddddddd-0000-4000-8000-000000000004",
+        },
+        {
+          "id": "bbbbbbbb-0000-4000-8000-000000000005",
+          "kind": "member",
+          "name": "Bravo5",
+          "number": 15,
+          "side": 2,
+          "userId": "dddddddd-0000-4000-8000-000000000005",
+        },
+        {
+          "id": "bbbbbbbb-0000-4000-8000-000000000006",
+          "kind": "member",
+          "name": "Bravo6",
+          "number": 16,
+          "side": 2,
+          "userId": "dddddddd-0000-4000-8000-000000000006",
+        },
+      ],
+      "playersPerSide": 6,
+      "rules": {
+        "ballsPerOver": 6,
+        "bowlerLimit": {
+          "mode": "none",
+        },
+        "byesCountAsBalls": true,
+        "dismissals": [
+          "bowled",
+          "caught",
+          "lbw",
+          "stumped",
+          "hit_wicket",
+          "run_out",
+          "retired_out",
+        ],
+        "freeHit": true,
+        "innings": 2,
+        "lastBatterAlone": true,
+        "legByesCountAsBalls": true,
+        "noBallRuns": 1,
+        "noBallsReBowled": true,
+        "overthrows": true,
+        "retiredCanReturn": true,
+        "sameBowlerTwoInARow": false,
+        "superOver": "ask",
+        "version": 1,
+        "wideRuns": 1,
+        "widesReBowled": true,
+      },
+      "sides": [
+        "Alpha",
+        "Bravo",
+      ],
+      "toss": {
+        "decision": "bowl",
+        "winner": 2,
+      },
+    },
+    "reason": undefined,
+    "seq": 1,
+    "type": "match_start",
+  },
+  {
+    "payload": {
+      "bowler": "bbbbbbbb-0000-4000-8000-000000000005",
+      "nonStriker": "aaaaaaaa-0000-4000-8000-000000000004",
+      "striker": "aaaaaaaa-0000-4000-8000-000000000003",
+    },
+    "reason": undefined,
+    "seq": 2,
+    "type": "innings_start",
+  },
+]
+`;
+
+exports[`GOLDEN: events made by the pad (must not change in the redesign) > start the match: batting first chosen, openers and bowler, Start scoring 1`] = `
+[
+  {
+    "payload": {
+      "battingFirst": 1,
+      "overs": 6,
+      "players": [
+        {
+          "id": "aaaaaaaa-0000-4000-8000-000000000001",
+          "kind": "member",
+          "name": "Alpha1",
+          "number": 1,
+          "side": 1,
+          "userId": "cccccccc-0000-4000-8000-000000000001",
+        },
+        {
+          "id": "aaaaaaaa-0000-4000-8000-000000000002",
+          "kind": "member",
+          "name": "Alpha2",
+          "number": 2,
+          "side": 1,
+          "userId": "cccccccc-0000-4000-8000-000000000002",
+        },
+        {
+          "id": "aaaaaaaa-0000-4000-8000-000000000003",
+          "kind": "member",
+          "name": "Alpha3",
+          "number": 3,
+          "side": 1,
+          "userId": "cccccccc-0000-4000-8000-000000000003",
+        },
+        {
+          "id": "aaaaaaaa-0000-4000-8000-000000000004",
+          "kind": "member",
+          "name": "Alpha4",
+          "number": 4,
+          "side": 1,
+          "userId": "cccccccc-0000-4000-8000-000000000004",
+        },
+        {
+          "id": "aaaaaaaa-0000-4000-8000-000000000005",
+          "kind": "member",
+          "name": "Alpha5",
+          "number": 5,
+          "side": 1,
+          "userId": "cccccccc-0000-4000-8000-000000000005",
+        },
+        {
+          "id": "aaaaaaaa-0000-4000-8000-000000000006",
+          "kind": "member",
+          "name": "Alpha6",
+          "number": 6,
+          "side": 1,
+          "userId": "cccccccc-0000-4000-8000-000000000006",
+        },
+        {
+          "id": "bbbbbbbb-0000-4000-8000-000000000001",
+          "kind": "member",
+          "name": "Bravo1",
+          "number": 11,
+          "side": 2,
+          "userId": "dddddddd-0000-4000-8000-000000000001",
+        },
+        {
+          "id": "bbbbbbbb-0000-4000-8000-000000000002",
+          "kind": "member",
+          "name": "Bravo2",
+          "number": 12,
+          "side": 2,
+          "userId": "dddddddd-0000-4000-8000-000000000002",
+        },
+        {
+          "id": "bbbbbbbb-0000-4000-8000-000000000003",
+          "kind": "member",
+          "name": "Bravo3",
+          "number": 13,
+          "side": 2,
+          "userId": "dddddddd-0000-4000-8000-000000000003",
+        },
+        {
+          "id": "bbbbbbbb-0000-4000-8000-000000000004",
+          "kind": "member",
+          "name": "Bravo4",
+          "number": 14,
+          "side": 2,
+          "userId": "dddddddd-0000-4000-8000-000000000004",
+        },
+        {
+          "id": "bbbbbbbb-0000-4000-8000-000000000005",
+          "kind": "member",
+          "name": "Bravo5",
+          "number": 15,
+          "side": 2,
+          "userId": "dddddddd-0000-4000-8000-000000000005",
+        },
+        {
+          "id": "bbbbbbbb-0000-4000-8000-000000000006",
+          "kind": "member",
+          "name": "Bravo6",
+          "number": 16,
+          "side": 2,
+          "userId": "dddddddd-0000-4000-8000-000000000006",
+        },
+      ],
+      "playersPerSide": 6,
+      "rules": {
+        "ballsPerOver": 6,
+        "bowlerLimit": {
+          "mode": "none",
+        },
+        "byesCountAsBalls": true,
+        "dismissals": [
+          "bowled",
+          "caught",
+          "lbw",
+          "stumped",
+          "hit_wicket",
+          "run_out",
+          "retired_out",
+        ],
+        "freeHit": true,
+        "innings": 2,
+        "lastBatterAlone": true,
+        "legByesCountAsBalls": true,
+        "noBallRuns": 1,
+        "noBallsReBowled": true,
+        "overthrows": true,
+        "retiredCanReturn": true,
+        "sameBowlerTwoInARow": false,
+        "superOver": "ask",
+        "version": 1,
+        "wideRuns": 1,
+        "widesReBowled": true,
+      },
+      "sides": [
+        "Alpha",
+        "Bravo",
+      ],
+      "toss": null,
+    },
+    "reason": undefined,
+    "seq": 1,
+    "type": "match_start",
+  },
+  {
+    "payload": {
+      "bowler": "bbbbbbbb-0000-4000-8000-000000000001",
+      "nonStriker": "aaaaaaaa-0000-4000-8000-000000000002",
+      "striker": "aaaaaaaa-0000-4000-8000-000000000001",
+    },
+    "reason": undefined,
+    "seq": 2,
+    "type": "innings_start",
+  },
+]
+`;
+
+exports[`GOLDEN: events made by the pad (must not change in the redesign) > the next batter prompt dismissed: Choose the next batter opens it again and the choice makes batter_in 1`] = `
+[
+  {
+    "payload": {
+      "end": "striker",
+      "player": "aaaaaaaa-0000-4000-8000-000000000003",
+    },
+    "reason": undefined,
+    "seq": 4,
+    "type": "batter_in",
+  },
+]
+`;
+
+exports[`GOLDEN: events made by the pad (must not change in the redesign) > wicket bowled with the next batter, then a second wicket caught (fielder), made as ball + batter_in 1`] = `
+[
+  {
+    "payload": {
+      "extra": null,
+      "runs": 0,
+      "wicket": {
+        "fielder": null,
+        "newEnd": null,
+        "out": null,
+        "type": "bowled",
+      },
+    },
+    "reason": undefined,
+    "seq": 3,
+    "type": "ball",
+  },
+  {
+    "payload": {
+      "end": null,
+      "player": "aaaaaaaa-0000-4000-8000-000000000003",
+    },
+    "reason": undefined,
+    "seq": 4,
+    "type": "batter_in",
+  },
+  {
+    "payload": {
+      "extra": null,
+      "runs": 0,
+      "wicket": {
+        "fielder": "bbbbbbbb-0000-4000-8000-000000000004",
+        "newEnd": null,
+        "out": null,
+        "type": "caught",
+      },
+    },
+    "reason": undefined,
+    "seq": 5,
+    "type": "ball",
+  },
+  {
+    "payload": {
+      "end": null,
+      "player": "aaaaaaaa-0000-4000-8000-000000000004",
+    },
+    "reason": undefined,
+    "seq": 6,
+    "type": "batter_in",
+  },
+]
+`;
+
+exports[`GOLDEN: events made by the pad (must not change in the redesign) > wide with runs, just the wide, no ball with runs, then a cancelled wide makes nothing 1`] = `
+[
+  {
+    "payload": {
+      "extra": "wide",
+      "runs": 1,
+    },
+    "reason": undefined,
+    "seq": 3,
+    "type": "ball",
+  },
+  {
+    "payload": {
+      "extra": "wide",
+      "runs": 0,
+    },
+    "reason": undefined,
+    "seq": 4,
+    "type": "ball",
+  },
+  {
+    "payload": {
+      "extra": "noball",
+      "runs": 4,
+    },
+    "reason": undefined,
+    "seq": 5,
+    "type": "ball",
+  },
+  {
+    "payload": {
+      "runs": 0,
+    },
+    "reason": undefined,
+    "seq": 6,
+    "type": "ball",
+  },
+]
+`;

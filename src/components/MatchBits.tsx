@@ -1,7 +1,8 @@
-import Link from "next/link";
-import CommunityLogo from "@/components/CommunityLogo";
+import MatchItemCard from "@/components/MatchItemCard";
 import { setAvailabilityAction } from "@/app/actions4";
-import { STATUS_LABEL, formatWhen, type MatchStatus } from "@/lib/matchRules";
+import { toMatchItem } from "@/lib/matchList";
+import { STATUS_LABEL, type MatchStatus } from "@/lib/matchRules";
+import type { CardSummary } from "@/lib/matchSummary";
 import { noReplyCount, type MatchRow } from "@/lib/matches";
 
 export const STATUS_TONE: Record<MatchStatus, string> = {
@@ -31,22 +32,7 @@ export function ReplyButtons({ communityId, m, next }: { communityId: string; m:
   );
 }
 
-export function MatchCard({ communityId, m, tz }: { communityId: string; m: MatchRow; tz: string }) {
-  return (
-    <Link href={`/c/${communityId}/matches/${m.id}`} className="card" style={{ display: "block" }}>
-      <div className="row space">
-        <span className="row" style={{ gap: 6 }}>
-          <CommunityLogo name={m.side1_name} /> <b aria-hidden="true">v</b> <CommunityLogo name={m.side2_name} />
-        </span>
-        <StatusChip status={m.status} />
-      </div>
-      <b style={{ display: "block", marginTop: 8 }}>{m.side1_name} v {m.side2_name}</b>
-      <small className="muted" style={{ display: "block" }}>{formatWhen(m.scheduled_at, tz)}{m.venue ? ` · ${m.venue}` : ""} · {m.overs} overs</small>
-      {["draft", "scheduled", "postponed"].includes(m.status) && (
-        <small className="muted" style={{ display: "block", marginTop: 4 }}>
-          {m.my_answer ? `You: ${m.my_answer === "in" ? "I’m in" : "Can’t make it"}` : "You have not replied"}
-        </small>
-      )}
-    </Link>
-  );
+/** One match as a card (server side). The list page uses the same card through `MatchList`, which filters plain data on the phone. */
+export function MatchCard({ communityId, m, tz, summary, myTeams }: { communityId: string; m: MatchRow; tz: string; summary?: CardSummary; myTeams?: ReadonlySet<string> }) {
+  return <MatchItemCard communityId={communityId} m={toMatchItem(m, tz, { summary, myTeams })} />;
 }

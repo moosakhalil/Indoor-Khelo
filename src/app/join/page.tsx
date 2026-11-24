@@ -1,28 +1,26 @@
 import type { Metadata } from "next";
-import Link from "next/link";
-import { FindCommunityForm } from "@/components/Forms";
+import EnIcon from "@/components/EnIcons";
+import EnJoinForm from "@/components/EnJoinForm";
+import { EnHead, EnTopBar } from "@/components/EnParts";
 import { requireAcceptedUser } from "@/lib/session";
 
 export const metadata: Metadata = { title: "Join a community" };
 
 export default async function JoinPage() {
-  await requireAcceptedUser();
+  const user = await requireAcceptedUser();
   return (
-    <main className="app">
-      <header className="topbar">
-        <Link href="/choose" className="back" aria-label="Back">‹</Link>
-        <h1>Join a community</h1>
-      </header>
-      <div className="stack">
-        <p className="muted" style={{ margin: 0 }}>Paste the invite link or type the code your Admin gave you.</p>
-        <FindCommunityForm />
-        <div className="card">
-          <b>Examples</b>
-          <div className="list" style={{ marginTop: 6 }}>
-            <div className="item"><span className="t"><small>Link</small><b className="mono" style={{ fontSize: "0.85rem" }}>…/join/KH-7Q4M</b></span></div>
-            <div className="item"><span className="t"><small>Code</small><b className="mono">KH-7Q4M</b></span></div>
-          </div>
-        </div>
+    <main className="app en-app en-narrow">
+      <EnTopBar back="/choose" user={{ name: user.name }} />
+      <div className="en-col">
+        <EnHead title="Join a community" lead="Paste the invite link or type the code your Admin gave you." />
+        <EnJoinForm />
+        <section className="en-card en-examples" aria-labelledby="ex-h">
+          <h2 id="ex-h" className="en-card-h">What it looks like</h2>
+          <ul className="en-rows">
+            <li className="en-ex"><span className="en-fact-ic"><EnIcon name="link" size={18} /></span><span className="en-row-t"><small>Link</small><b className="mono">…/join/KH-7Q4M</b></span></li>
+            <li className="en-ex"><span className="en-fact-ic"><EnIcon name="code" size={18} /></span><span className="en-row-t"><small>Code</small><b className="mono">KH-7Q4M</b></span></li>
+          </ul>
+        </section>
       </div>
     </main>
   );

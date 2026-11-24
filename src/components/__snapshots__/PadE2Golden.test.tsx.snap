@@ -1,0 +1,1007 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`golden: byes and leg-byes > 2 byes and 3 leg-byes 1`] = `
+"[
+ {
+  "bodies": [
+   {
+    "type": "ball",
+    "payload": {
+     "extra": "bye",
+     "runs": 2
+    }
+   }
+  ]
+ }
+]"
+`;
+
+exports[`golden: byes and leg-byes > 2 byes and 3 leg-byes 2`] = `
+"[
+ {
+  "bodies": [
+   {
+    "type": "ball",
+    "payload": {
+     "extra": "legbye",
+     "runs": 3
+    }
+   }
+  ]
+ }
+]"
+`;
+
+exports[`golden: changes during play > batting order: Arsalan then Owais; the same person twice is refused 1`] = `
+"[
+ {
+  "bodies": [
+   {
+    "type": "batting_order",
+    "payload": {
+     "order": [
+      "a5",
+      "a4"
+     ]
+    }
+   }
+  ]
+ }
+]"
+`;
+
+exports[`golden: changes during play > bowler limit: none, maximum 2, pattern 2-1-1 (with a reason); the pattern 3 is refused 1`] = `
+"[
+ {
+  "bodies": [
+   {
+    "type": "limit_change",
+    "payload": {
+     "limit": {
+      "mode": "none"
+     }
+    }
+   }
+  ],
+  "opts": {
+   "reason": ""
+  }
+ }
+]"
+`;
+
+exports[`golden: changes during play > bowler limit: none, maximum 2, pattern 2-1-1 (with a reason); the pattern 3 is refused 2`] = `
+"[
+ {
+  "bodies": [
+   {
+    "type": "limit_change",
+    "payload": {
+     "limit": {
+      "mode": "max",
+      "overs": 2
+     }
+    }
+   }
+  ],
+  "opts": {
+   "reason": ""
+  }
+ }
+]"
+`;
+
+exports[`golden: changes during play > bowler limit: none, maximum 2, pattern 2-1-1 (with a reason); the pattern 3 is refused 3`] = `
+"[
+ {
+  "bodies": [
+   {
+    "type": "limit_change",
+    "payload": {
+     "limit": {
+      "mode": "pattern",
+      "pattern": [
+       2,
+       1,
+       1
+      ]
+     }
+    }
+   }
+  ],
+  "opts": {
+   "reason": "agreed before the toss"
+  }
+ }
+]"
+`;
+
+exports[`golden: changes during play > correct the batters: striker Talha with Saad, then Hamza with nobody (batting alone) 1`] = `
+"[
+ {
+  "bodies": [
+   {
+    "type": "set_crease",
+    "payload": {
+     "striker": "a3",
+     "nonStriker": "a2"
+    }
+   }
+  ]
+ }
+]"
+`;
+
+exports[`golden: changes during play > correct the batters: striker Talha with Saad, then Hamza with nobody (batting alone) 2`] = `
+"[
+ {
+  "bodies": [
+   {
+    "type": "set_crease",
+    "payload": {
+     "striker": "a1",
+     "nonStriker": null
+    }
+   }
+  ]
+ }
+]"
+`;
+
+exports[`golden: changes during play > end the innings, with and without a reason 1`] = `
+"[
+ {
+  "bodies": [
+   {
+    "type": "innings_end",
+    "payload": {}
+   }
+  ],
+  "opts": {
+   "reason": "declared"
+  }
+ }
+]"
+`;
+
+exports[`golden: changes during play > end the innings, with and without a reason 2`] = `
+"[
+ {
+  "bodies": [
+   {
+    "type": "innings_end",
+    "payload": {}
+   }
+  ],
+  "opts": {
+   "reason": ""
+  }
+ }
+]"
+`;
+
+exports[`golden: changes during play > late player: a member joins Royal Panthers; a guest joins Thunder Strikers; an empty guest name adds nothing 1`] = `
+"[
+ {
+  "bodies": [
+   {
+    "type": "player_added",
+    "payload": {
+     "player": {
+      "id": "new-1",
+      "side": 2,
+      "name": "Yasir Farooq",
+      "number": 9,
+      "kind": "member",
+      "userId": "u-yasir"
+     }
+    }
+   }
+  ]
+ }
+]"
+`;
+
+exports[`golden: changes during play > late player: a member joins Royal Panthers; a guest joins Thunder Strikers; an empty guest name adds nothing 2`] = `
+"[
+ {
+  "bodies": [
+   {
+    "type": "player_added",
+    "payload": {
+     "player": {
+      "id": "new-2",
+      "side": 1,
+      "name": "Ahmed",
+      "number": null,
+      "kind": "guest",
+      "userId": null
+     }
+    }
+   }
+  ]
+ }
+]"
+`;
+
+exports[`golden: changes during play > overs: 8 for the remaining innings with a reason, and the default 1`] = `
+"[
+ {
+  "bodies": [
+   {
+    "type": "overs_change",
+    "payload": {
+     "overs": 8,
+     "scope": "remaining"
+    }
+   }
+  ],
+  "opts": {
+   "reason": "rain stopped play"
+  }
+ }
+]"
+`;
+
+exports[`golden: changes during play > overs: 8 for the remaining innings with a reason, and the default 2`] = `
+"[
+ {
+  "bodies": [
+   {
+    "type": "overs_change",
+    "payload": {
+     "overs": 6,
+     "scope": "innings"
+    }
+   }
+  ],
+  "opts": {
+   "reason": ""
+  }
+ }
+]"
+`;
+
+exports[`golden: changes during play > penalty runs: the default, and 7 with a reason 1`] = `
+"[
+ {
+  "bodies": [
+   {
+    "type": "penalty",
+    "payload": {
+     "runs": 5
+    }
+   }
+  ],
+  "opts": {
+   "reason": ""
+  }
+ }
+]"
+`;
+
+exports[`golden: changes during play > penalty runs: the default, and 7 with a reason 2`] = `
+"[
+ {
+  "bodies": [
+   {
+    "type": "penalty",
+    "payload": {
+     "runs": 7
+    }
+   }
+  ],
+  "opts": {
+   "reason": "slow over rate"
+  }
+ }
+]"
+`;
+
+exports[`golden: changes during play > players per side: 7, and 12 is refused 1`] = `
+"[
+ {
+  "bodies": [
+   {
+    "type": "players_change",
+    "payload": {
+     "playersPerSide": 7
+    }
+   }
+  ],
+  "opts": {
+   "reason": ""
+  }
+ }
+]"
+`;
+
+exports[`golden: changes during play > retire: retired hurt (the default), absent, replaced by someone 1`] = `
+"[
+ {
+  "bodies": [
+   {
+    "type": "retire",
+    "payload": {
+     "player": "a1",
+     "kind": "retired_hurt",
+     "replacedBy": null
+    }
+   }
+  ],
+  "opts": {
+   "reason": ""
+  }
+ }
+]"
+`;
+
+exports[`golden: changes during play > retire: retired hurt (the default), absent, replaced by someone 2`] = `
+"[
+ {
+  "bodies": [
+   {
+    "type": "retire",
+    "payload": {
+     "player": "a4",
+     "kind": "absent",
+     "replacedBy": null
+    }
+   }
+  ],
+  "opts": {
+   "reason": ""
+  }
+ }
+]"
+`;
+
+exports[`golden: changes during play > retire: retired hurt (the default), absent, replaced by someone 3`] = `
+"[
+ {
+  "bodies": [
+   {
+    "type": "retire",
+    "payload": {
+     "player": "a4",
+     "kind": "replaced",
+     "replacedBy": "a5"
+    }
+   }
+  ],
+  "opts": {
+   "reason": "went home"
+  }
+ }
+]"
+`;
+
+exports[`golden: changes during play > retire: retired hurt (the default), absent, replaced by someone 4`] = `
+"[
+ {
+  "bodies": [
+   {
+    "type": "retire",
+    "payload": {
+     "player": "a1",
+     "kind": "retired_out",
+     "replacedBy": null
+    }
+   }
+  ],
+  "opts": {
+   "reason": ""
+  }
+ }
+]"
+`;
+
+exports[`golden: changes during play > revised target: 55, empty (back to the original) and 0 (refused) 1`] = `
+"[
+ {
+  "bodies": [
+   {
+    "type": "target_manual",
+    "payload": {
+     "target": 55
+    }
+   }
+  ]
+ }
+]"
+`;
+
+exports[`golden: changes during play > revised target: 55, empty (back to the original) and 0 (refused) 2`] = `
+"[
+ {
+  "bodies": [
+   {
+    "type": "target_manual",
+    "payload": {
+     "target": null
+    }
+   }
+  ]
+ }
+]"
+`;
+
+exports[`golden: changes during play > substitute fielder: Danish for Royal Panthers (the default), and for Thunder Strikers 1`] = `
+"[
+ {
+  "bodies": [
+   {
+    "type": "substitute",
+    "payload": {
+     "side": 2,
+     "name": "Danish"
+    }
+   }
+  ]
+ }
+]"
+`;
+
+exports[`golden: changes during play > substitute fielder: Danish for Royal Panthers (the default), and for Thunder Strikers 2`] = `
+"[
+ {
+  "bodies": [
+   {
+    "type": "substitute",
+    "payload": {
+     "side": 1,
+     "name": "Danish"
+    }
+   }
+  ]
+ }
+]"
+`;
+
+exports[`golden: editing an earlier ball > a wicket removed from the third ball 1`] = `
+"[
+ {
+  "bodies": [
+   {
+    "type": "edit",
+    "payload": {
+     "target": "e5",
+     "patch": {
+      "runs": 0,
+      "extra": null,
+      "wicket": null
+     }
+    }
+   }
+  ],
+  "opts": {
+   "reason": ""
+  }
+ }
+]"
+`;
+
+exports[`golden: editing an earlier ball > change the first ball from 4 to 6 with a reason 1`] = `
+"[
+ {
+  "bodies": [
+   {
+    "type": "edit",
+    "payload": {
+     "target": "e3",
+     "patch": {
+      "runs": 6,
+      "extra": null,
+      "wicket": null
+     }
+    }
+   }
+  ],
+  "opts": {
+   "reason": "mis-tap"
+  }
+ }
+]"
+`;
+
+exports[`golden: editing an earlier ball > make the third ball a run out of the non-striker caught by Usman; a caught needs a fielder 1`] = `
+"[
+ {
+  "bodies": [
+   {
+    "type": "edit",
+    "payload": {
+     "target": "e5",
+     "patch": {
+      "runs": 0,
+      "extra": null,
+      "wicket": {
+       "type": "run_out",
+       "out": "a2",
+       "fielder": "b2"
+      }
+     }
+    }
+   }
+  ],
+  "opts": {
+   "reason": ""
+  }
+ }
+]"
+`;
+
+exports[`golden: editing an earlier ball > open on a given ball (from the over strip): make it a wide with 1 run 1`] = `
+"[
+ {
+  "bodies": [
+   {
+    "type": "edit",
+    "payload": {
+     "target": "e4",
+     "patch": {
+      "runs": 0,
+      "extra": "wide",
+      "wicket": null
+     }
+    }
+   }
+  ],
+  "opts": {
+   "reason": ""
+  }
+ }
+]"
+`;
+
+exports[`golden: ending the match early (each outcome) > abandon, thunder won, panthers won, no result 1`] = `
+"[
+ {
+  "bodies": [
+   {
+    "type": "match_end",
+    "payload": {
+     "kind": "abandoned"
+    }
+   }
+  ],
+  "opts": {
+   "reason": "ground flooded"
+  }
+ }
+]"
+`;
+
+exports[`golden: ending the match early (each outcome) > abandon, thunder won, panthers won, no result 2`] = `
+"[
+ {
+  "bodies": [
+   {
+    "type": "match_end",
+    "payload": {
+     "kind": "result",
+     "winner": 1
+    }
+   }
+  ],
+  "opts": {
+   "reason": ""
+  }
+ }
+]"
+`;
+
+exports[`golden: ending the match early (each outcome) > abandon, thunder won, panthers won, no result 3`] = `
+"[
+ {
+  "bodies": [
+   {
+    "type": "match_end",
+    "payload": {
+     "kind": "result",
+     "winner": 2
+    }
+   }
+  ],
+  "opts": {
+   "reason": ""
+  }
+ }
+]"
+`;
+
+exports[`golden: ending the match early (each outcome) > abandon, thunder won, panthers won, no result 4`] = `
+"[
+ {
+  "bodies": [
+   {
+    "type": "match_end",
+    "payload": {
+     "kind": "result",
+     "winner": null
+    }
+   }
+  ],
+  "opts": {
+   "reason": ""
+  }
+ }
+]"
+`;
+
+exports[`golden: the next batter and the bowler > changing the bowler in the middle of an over 1`] = `
+"[
+ {
+  "bodies": [
+   {
+    "type": "bowler",
+    "payload": {
+     "player": "b3"
+    }
+   }
+  ]
+ }
+]"
+`;
+
+exports[`golden: the next batter and the bowler > the bowler for the next over: one tap on an allowed bowler records it 1`] = `
+"[
+ {
+  "bodies": [
+   {
+    "type": "bowler",
+    "payload": {
+     "player": "b2"
+    }
+   }
+  ]
+ }
+]"
+`;
+
+exports[`golden: the next batter and the bowler > the next batter at the non-striker's end 1`] = `
+"[
+ {
+  "bodies": [
+   {
+    "type": "batter_in",
+    "payload": {
+     "player": "a4",
+     "end": "nonStriker"
+    }
+   }
+  ]
+ }
+]"
+`;
+
+exports[`golden: the next batter and the bowler > the next batter at the vacant (striker's) end 1`] = `
+"[
+ {
+  "bodies": [
+   {
+    "type": "batter_in",
+    "payload": {
+     "player": "a3",
+     "end": "striker"
+    }
+   }
+  ]
+ }
+]"
+`;
+
+exports[`golden: the wicket sheet > bowled, next batter picked 1`] = `
+"[
+ {
+  "bodies": [
+   {
+    "type": "ball",
+    "payload": {
+     "runs": 0,
+     "extra": null,
+     "wicket": {
+      "type": "bowled",
+      "out": null,
+      "fielder": null
+     }
+    }
+   }
+  ],
+  "opts": {
+   "then": [
+    {
+     "type": "batter_in",
+     "payload": {
+      "player": "a3",
+      "end": null
+     }
+    }
+   ]
+  }
+ }
+]"
+`;
+
+exports[`golden: the wicket sheet > caught by the bowler, next batter picked 1`] = `
+"[
+ {
+  "bodies": [
+   {
+    "type": "ball",
+    "payload": {
+     "runs": 0,
+     "extra": null,
+     "wicket": {
+      "type": "caught",
+      "out": null,
+      "fielder": "b1"
+     }
+    }
+   }
+  ],
+  "opts": {
+   "then": [
+    {
+     "type": "batter_in",
+     "payload": {
+      "player": "a4",
+      "end": null
+     }
+    }
+   ]
+  }
+ }
+]"
+`;
+
+exports[`golden: the wicket sheet > free hit: only run out can be picked 1`] = `
+"[
+ {
+  "bodies": [
+   {
+    "type": "ball",
+    "payload": {
+     "runs": 0,
+     "extra": null,
+     "wicket": {
+      "type": "run_out",
+      "out": "a1",
+      "fielder": "b1"
+     }
+    }
+   }
+  ],
+  "opts": {
+   "then": []
+  }
+ }
+]"
+`;
+
+exports[`golden: the wicket sheet > lbw and hit wicket 1`] = `
+"[
+ {
+  "bodies": [
+   {
+    "type": "ball",
+    "payload": {
+     "runs": 0,
+     "extra": null,
+     "wicket": {
+      "type": "lbw",
+      "out": null,
+      "fielder": null
+     }
+    }
+   }
+  ],
+  "opts": {
+   "then": [
+    {
+     "type": "batter_in",
+     "payload": {
+      "player": "a5",
+      "end": null
+     }
+    }
+   ]
+  }
+ }
+]"
+`;
+
+exports[`golden: the wicket sheet > lbw and hit wicket 2`] = `
+"[
+ {
+  "bodies": [
+   {
+    "type": "ball",
+    "payload": {
+     "runs": 0,
+     "extra": null,
+     "wicket": {
+      "type": "hit_wicket",
+      "out": null,
+      "fielder": null
+     }
+    }
+   }
+  ],
+  "opts": {
+   "then": [
+    {
+     "type": "batter_in",
+     "payload": {
+      "player": "a6",
+      "end": null
+     }
+    }
+   ]
+  }
+ }
+]"
+`;
+
+exports[`golden: the wicket sheet > retired out: a retire event for the striker 1`] = `
+"[
+ {
+  "bodies": [
+   {
+    "type": "retire",
+    "payload": {
+     "player": "a1",
+     "kind": "retired_out"
+    }
+   }
+  ],
+  "opts": {
+   "then": [
+    {
+     "type": "batter_in",
+     "payload": {
+      "player": "a3",
+      "end": null
+     }
+    }
+   ]
+  }
+ }
+]"
+`;
+
+exports[`golden: the wicket sheet > run out from the RUN OUT key (preselected), striker, no runs, normal ball, suggested end 1`] = `
+"[
+ {
+  "bodies": [
+   {
+    "type": "ball",
+    "payload": {
+     "runs": 0,
+     "extra": null,
+     "wicket": {
+      "type": "run_out",
+      "out": "a1",
+      "fielder": "b6"
+     }
+    }
+   }
+  ],
+  "opts": {
+   "then": [
+    {
+     "type": "batter_in",
+     "payload": {
+      "player": "a4",
+      "end": null
+     }
+    }
+   ]
+  }
+ }
+]"
+`;
+
+exports[`golden: the wicket sheet > run out on a no ball with 1 run 1`] = `
+"[
+ {
+  "bodies": [
+   {
+    "type": "ball",
+    "payload": {
+     "runs": 1,
+     "extra": "noball",
+     "wicket": {
+      "type": "run_out",
+      "out": "a1",
+      "fielder": "b4"
+     }
+    }
+   }
+  ],
+  "opts": {
+   "then": []
+  }
+ }
+]"
+`;
+
+exports[`golden: the wicket sheet > run out: the non-striker, 2 runs, on a wide, fielder, next batter at the non-striker's end 1`] = `
+"[
+ {
+  "bodies": [
+   {
+    "type": "ball",
+    "payload": {
+     "runs": 2,
+     "extra": "wide",
+     "wicket": {
+      "type": "run_out",
+      "out": "a2",
+      "fielder": "b5"
+     }
+    }
+   }
+  ],
+  "opts": {
+   "then": [
+    {
+     "type": "batter_in",
+     "payload": {
+      "player": "a3",
+      "end": "nonStriker"
+     }
+    }
+   ]
+  }
+ }
+]"
+`;
+
+exports[`golden: the wicket sheet > stumped by the keeper, choose the next batter later 1`] = `
+"[
+ {
+  "bodies": [
+   {
+    "type": "ball",
+    "payload": {
+     "runs": 0,
+     "extra": null,
+     "wicket": {
+      "type": "stumped",
+      "out": null,
+      "fielder": "b2"
+     }
+    }
+   }
+  ],
+  "opts": {
+   "then": []
+  }
+ }
+]"
+`;
+
+exports[`golden: the wicket sheet > the last batter: there is no next-batter question 1`] = `
+"[
+ {
+  "bodies": [
+   {
+    "type": "ball",
+    "payload": {
+     "runs": 0,
+     "extra": null,
+     "wicket": {
+      "type": "bowled",
+      "out": null,
+      "fielder": null
+     }
+    }
+   }
+  ],
+  "opts": {
+   "then": []
+  }
+ }
+]"
+`;

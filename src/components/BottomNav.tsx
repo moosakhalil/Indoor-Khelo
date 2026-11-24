@@ -11,32 +11,80 @@ const ICONS: Record<string, React.ReactNode> = {
   profile: <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4" /><path d="M4 21c0-5 4-7 8-7s8 2 8 7" /></svg>,
 };
 
-// The five tabs: Home, Matches, Teams, Payments, Profile. Every tab has a label, never an icon alone.
-export default function BottomNav({ communityId }: { communityId: string }) {
+// The same five tabs on every screen size, never an icon without a label:
+//   phone (under 640 px)  bar at the bottom
+//   tablet (640 px up)    narrow rail on the left, icons with small labels
+//   desktop (1024 px up)  sidebar with the app name, full labels and a "More" list
+export const MAIN_TABS = [
+  { key: "home", label: "Home", path: "", exact: true },
+  { key: "matches", label: "Matches", path: "/matches" },
+  { key: "teams", label: "Teams", path: "/teams" },
+  { key: "payments", label: "Payments", path: "/payments" },
+  { key: "profile", label: "Profile", path: "/profile" },
+] as const;
+
+// Only shown in the sidebar (they stay reachable from the pages on a phone).
+export const MORE_LINKS = [
+  { label: "Community", path: "/community" },
+  { label: "Series", path: "/series" },
+  { label: "Leaderboard", path: "/leaderboard" },
+  { label: "Insights", path: "/insights" },
+  { label: "Members", path: "/members" },
+  { label: "Alerts", path: "/alerts" },
+] as const;
+
+// Pages that belong to the Home tab: the tab stays lit on them, so one tab is always active.
+const HOME_PAGES = ["/members", "/alerts", "/community", "/invite", "/requests", "/settings"] as const;
+
+/**
+ * The navigation. The four optional slots hold small server pieces (see ShellParts.tsx) and are all optional:
+ * `header` is the community switcher at the top of the sidebar, `footer` is who you are, `matchesSlot` is the live dot
+ * on the Matches tab and `alertsSlot` is the unread count beside Alerts in the sidebar list.
+ */
+export default function BottomNav({
+  communityId, header, footer, matchesSlot, alertsSlot,
+}: { communityId: string; header?: React.ReactNode; footer?: React.ReactNode; matchesSlot?: React.ReactNode; alertsSlot?: React.ReactNode }) {
   const path = usePathname();
   const base = `/c/${communityId}`;
-  const tabs = [
-    { key: "home", label: "Home", href: base, exact: true },
-    { key: "matches", label: "Matches", href: `${base}/matches` },
-    { key: "teams", label: "Teams", href: `${base}/teams` },
-    { key: "payments", label: "Payments", href: `${base}/payments` },
-    { key: "profile", label: "Profile", href: `${base}/profile` },
-  ];
+  const onHomePage = HOME_PAGES.some((p) => path === `${base}${p}` || path.startsWith(`${base}${p}/`));
   return (
     <nav className="nav" aria-label="Main">
+      <Link href={base} className="nav-brand" tabIndex={-1} aria-hidden="true">
+        <span className="logo-mark">IK</span>
+        <b>Indoor Khelo</b>
+      </Link>
+      {header && <div className="hm-nav-head">{header}</div>}
       <ul>
-        {tabs.map((t) => {
-          const active = t.exact ? path === t.href || path === `${base}/` : path.startsWith(t.href);
+        {MAIN_TABS.map((t) => {
+          const href = `${base}${t.path}`;
+          const active = "exact" in t && t.exact ? path === href || path === `${href}/` || onHomePage : path.startsWith(href);
           return (
-            <li key={t.key}>
-              <Link href={t.href} aria-current={active ? "page" : undefined}>
+            <li key={t.key} className="hm-nav-li">
+              <Link href={href} aria-current={active ? "page" : undefined}>
                 {ICONS[t.key]}
                 <span>{t.label}</span>
               </Link>
+              {t.key === "matches" && matchesSlot}
             </li>
           );
         })}
       </ul>
+      <div className="nav-more">
+        <p className="nav-more-h">More</p>
+        <ul>
+          {MORE_LINKS.map((l) => {
+            const href = `${base}${l.path}`;
+            return (
+              <li key={l.path} className="hm-nav-li">
+                <Link href={href} aria-current={path.startsWith(href) ? "page" : undefined}>{l.label}</Link>
+                {l.path === "/alerts" && alertsSlot}
+              </li>
+            );
+          })}
+          <li><Link href="/switch">Switch community</Link></li>
+        </ul>
+      </div>
+      {footer && <div className="hm-nav-foot">{footer}</div>}
     </nav>
   );
 }

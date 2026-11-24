@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
-import Link from "next/link";
-import CommunityLogo from "@/components/CommunityLogo";
+import { cookies } from "next/headers";
+import EnSwitchList from "@/components/EnSwitchList";
+import { EnHead, EnTopBar } from "@/components/EnParts";
 import { listMyCommunities } from "@/lib/community";
 import { requireAcceptedUser } from "@/lib/session";
 
@@ -9,27 +10,17 @@ export const metadata: Metadata = { title: "Your communities" };
 export default async function SwitchPage() {
   const user = await requireAcceptedUser();
   const mine = await listMyCommunities(user.id);
+  // The same choice /home makes: the last community opened on this phone (cookie ik_last), otherwise the first ready one.
+  const last = (await cookies()).get("ik_last")?.value;
+  const ready = mine.filter((c) => c.status === "approved" && c.player_number !== null);
+  const lastReady = ready.find((c) => c.id === last);
+  const preferred = lastReady ?? ready[0];
   return (
-    <main className="app">
-      <header className="topbar">
-        <Link href="/home" className="back" aria-label="Back">‹</Link>
-        <h1>Your communities</h1>
-      </header>
-      <div className="stack">
-        <section className="card list">
-          {mine.length === 0 && <div className="item muted">You are not in a community yet.</div>}
-          {mine.map((c) => (
-            <div key={c.id} className="item">
-              <CommunityLogo name={c.name} />
-              <span className="t grow"><b>{c.name}</b><small>{c.status === "pending" ? "Waiting for approval" : `${c.role === "admin" ? "Admin" : "Member"} · number ${c.player_number ?? "–"}`}</small></span>
-              <a href={`/switch/${c.id}`} className="chip gold">Open</a>
-            </div>
-          ))}
-        </section>
-        <div className="two">
-          <Link href="/create" className="btn ghost small" style={{ width: "100%" }}>Create community</Link>
-          <Link href="/join" className="btn ghost small" style={{ width: "100%" }}>Join community</Link>
-        </div>
+    <main className="app en-app en-narrow">
+      <EnTopBar back="/home" user={{ name: user.name }} />
+      <div className="en-col">
+        <EnHead title="Your communities" lead={mine.length > 0 ? "Tap one to open it." : undefined} />
+        <EnSwitchList mine={mine} preferredId={preferred?.id} lastId={lastReady?.id} />
       </div>
     </main>
   );

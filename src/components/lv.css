@@ -1,0 +1,147 @@
+/* Phase D2 (UI redesign): Live view (what a non-scorer sees) and the take-over gate. Every class starts with lv-. Flat colour, no blur. */
+
+.lv-ic { flex: 0 0 auto; }
+.lv-sr { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
+.lv-root { display: flex; flex-direction: column; gap: 12px; }
+.lv-col { display: flex; flex-direction: column; gap: 12px; min-width: 0; }
+.lv-h { margin: 4px 2px -4px; font-size: 0.74rem; font-weight: 800; letter-spacing: 0.09em; text-transform: uppercase; color: var(--mute); }
+.lv-num, .lv-score, .lv-val { font-family: var(--font-num); font-variant-numeric: tabular-nums; }
+
+/* ---------- top bar chips ---------- */
+.lv-auto { flex: 0 0 auto; display: inline-flex; align-items: center; gap: 6px; min-height: 32px; padding: 0 12px; border-radius: 999px; border: 1px solid var(--green); background: rgba(47, 191, 113, 0.14); color: #7fe0a8; font-size: 0.78rem; font-weight: 800; white-space: nowrap; }
+.lv-auto.paused { border-color: var(--orange); background: rgba(255, 181, 71, 0.14); color: var(--orange); }
+.lv-dot { width: 8px; height: 8px; border-radius: 50%; background: currentColor; flex: 0 0 auto; }
+@media (max-width: 380px) { .lv-auto .lv-auto-long { display: none; } }
+
+/* ---------- score bug ---------- */
+.lv-bug { background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); overflow: hidden; }
+.lv-bug-top { display: flex; align-items: center; gap: 10px; padding: 12px 14px 10px; }
+.lv-state { flex: 0 0 auto; display: inline-flex; align-items: center; gap: 6px; min-height: 26px; padding: 0 10px; border-radius: 8px; font-size: 0.72rem; font-weight: 800; letter-spacing: 0.06em; }
+.lv-state.live { background: #c62a2f; color: #fff; }
+.lv-state.paused { background: rgba(255, 181, 71, 0.16); color: var(--orange); border: 1px solid var(--orange); }
+.lv-state.live .lv-dot { background: #fff; }
+.lv-meta { flex: 1; min-width: 0; font-size: 0.82rem; font-weight: 700; line-height: 1.3; color: var(--white); overflow-wrap: anywhere; }
+.lv-bug-top .lv-auto { min-height: 36px; }
+.lv-row { display: flex; align-items: center; gap: 12px; padding: 10px 14px; background: var(--card2); border-top: 1px solid var(--line); border-left: 4px solid transparent; }
+.lv-row.on { border-left-color: var(--gold); background: #141c36; }
+.lv-row .lv-tn { flex: 1; min-width: 0; font-weight: 800; font-size: 1.02rem; overflow-wrap: anywhere; line-height: 1.2; }
+.lv-row.off .lv-tn, .lv-row.off .lv-score { color: var(--mute); }
+.lv-row .lv-tb { flex: 0 0 auto; border-radius: 14px; }
+.lv-row.on .lv-tb { box-shadow: 0 0 0 2px var(--night), 0 0 0 4px var(--gold); }
+.lv-score { font-size: 1.9rem; font-weight: 800; line-height: 1; letter-spacing: -0.01em; white-space: nowrap; }
+.lv-score small { font-size: 0.8rem; font-weight: 700; color: var(--mute); margin-left: 6px; letter-spacing: 0; }
+.lv-line { margin: 0; padding: 10px 14px 12px; background: #141c36; border-top: 1px solid var(--line); color: var(--gold); font-weight: 800; font-size: 0.9rem; line-height: 1.35; overflow-wrap: anywhere; }
+.lv-line.ok { color: #7fe0a8; }
+
+/* ---------- top bar subtitle ---------- */
+.lv-sub { display: block; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; line-clamp: 2; overflow: hidden; overflow-wrap: anywhere; }
+
+/* ---------- free hit ---------- */
+.lv-freehit { text-align: center; padding: 10px 14px; border-radius: 14px; border: 1px solid var(--orange); background: rgba(255, 181, 71, 0.12); }
+.lv-freehit b { display: block; font-size: 1.25rem; letter-spacing: 0.06em; color: var(--orange); }
+.lv-freehit small { display: block; margin-top: 2px; font-weight: 600; color: var(--white); }
+
+/* ---------- at the crease strips ---------- */
+.lv-strip { display: flex; align-items: center; gap: 12px; min-height: 60px; padding: 8px 14px; background: var(--card); border: 1px solid var(--line); border-radius: 14px; }
+.lv-strip .lv-who { flex: 1; min-width: 0; line-height: 1.25; }
+.lv-strip .lv-who b { display: block; font-size: 1rem; overflow-wrap: anywhere; }
+.lv-strip .lv-who small { display: block; color: var(--mute); font-size: 0.8rem; font-weight: 600; overflow-wrap: anywhere; }
+.lv-star { color: var(--gold); }
+.lv-val { font-size: 1.35rem; font-weight: 800; white-space: nowrap; }
+.lv-val small { font-size: 0.8rem; font-weight: 700; color: var(--mute); margin-left: 2px; }
+.lv-strip.need { color: var(--mute); }
+.lv-lim { flex: 0 0 auto; display: inline-flex; align-items: center; min-height: 28px; padding: 0 12px; border-radius: 999px; font-size: 0.7rem; font-weight: 800; letter-spacing: 0.05em; border: 1px solid var(--green); background: rgba(47, 191, 113, 0.14); color: #7fe0a8; white-space: nowrap; }
+.lv-lim.zero { border-color: var(--orange); background: rgba(255, 181, 71, 0.14); color: var(--orange); }
+
+/* ---------- this over ---------- */
+.lv-over { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 12px 14px 14px; }
+.lv-over-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; font-size: 0.78rem; font-weight: 800; letter-spacing: 0.07em; text-transform: uppercase; color: var(--mute); }
+.lv-over-balls { display: flex; flex-wrap: wrap; gap: 6px; min-height: 40px; align-items: center; }
+.lv-b { display: inline-flex; align-items: center; justify-content: center; min-width: 40px; height: 40px; padding: 0 6px; border-radius: 20px; background: var(--card2); border: 1.5px solid var(--line); color: var(--white); font-family: var(--font-num); font-weight: 800; font-size: 1rem; }
+.lv-b.four { border-color: var(--blue); color: var(--blue); background: rgba(90, 169, 255, 0.12); }
+.lv-b.six { border-color: var(--gold); background: var(--gold); color: var(--night); }
+.lv-b.w { border-color: var(--red); background: #c62a2f; color: #fff; }
+.lv-b.x { border-color: var(--orange); color: var(--orange); background: rgba(255, 181, 71, 0.12); }
+.lv-b.empty { border: 1.5px dashed var(--line); background: transparent; }
+
+/* ---------- stats ---------- */
+.lv-stats { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 6px 14px 12px; }
+.lv-stat { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; min-height: 40px; padding: 8px 0; font-size: 0.92rem; }
+.lv-stat + .lv-stat { border-top: 1px solid var(--line); }
+.lv-stat > span { color: var(--mute); }
+.lv-stat > b { text-align: right; overflow-wrap: anywhere; font-family: var(--font-num); font-variant-numeric: tabular-nums; }
+.lv-prog { margin-top: 6px; }
+.lv-prog-l { display: flex; justify-content: space-between; font-size: 0.78rem; color: var(--mute); font-weight: 600; margin-bottom: 6px; }
+.lv-bar { height: 10px; border-radius: 999px; background: var(--card2); border: 1px solid var(--line); overflow: hidden; }
+.lv-bar > i { display: block; height: 100%; background: var(--gold); border-radius: 999px; }
+
+/* ---------- idle (not started, waiting for innings) ---------- */
+.lv-idle { background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); padding: 18px 14px 14px; text-align: center; }
+.lv-idle-sides { display: flex; align-items: center; justify-content: center; gap: 22px; }
+.lv-idle-side { display: flex; flex-direction: column; align-items: center; gap: 6px; min-width: 0; max-width: 40%; }
+.lv-idle-side b { font-size: 0.9rem; overflow-wrap: anywhere; }
+.lv-idle .lv-v { font-weight: 800; color: var(--mute); }
+.lv-idle p { margin: 12px 0 0; }
+
+/* ---------- gate ---------- */
+.lv-gate { display: flex; flex-direction: column; gap: 12px; }
+.lv-who2 { display: flex; align-items: center; gap: 12px; }
+.lv-who2 .lv-wt { flex: 1; min-width: 0; line-height: 1.3; }
+.lv-who2 .lv-wt b { display: block; font-size: 1.02rem; overflow-wrap: anywhere; }
+.lv-who2 .lv-wt p { margin: 2px 0 0; font-size: 0.88rem; color: var(--mute); }
+.lv-q { flex: 0 0 auto; width: 36px; height: 36px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; background: var(--card2); border: 1px solid var(--line); color: var(--mute); font-weight: 800; }
+.lv-livechip { flex: 0 0 auto; align-self: flex-start; display: inline-flex; align-items: center; gap: 6px; min-height: 28px; padding: 0 10px; border-radius: 999px; border: 1px solid var(--green); background: rgba(47, 191, 113, 0.14); color: #7fe0a8; font-size: 0.74rem; font-weight: 800; }
+.lv-btn { display: flex; align-items: center; justify-content: center; gap: 10px; }
+.lv-btn.wide { width: 100%; min-height: 52px; font-size: 1rem; }
+.lv-hint { margin: -4px 2px 0; font-size: 0.82rem; color: var(--mute); }
+.lv-wait { display: flex; align-items: flex-start; gap: 10px; padding: 12px 14px; border-radius: 12px; border: 1px solid var(--blue); background: rgba(90, 169, 255, 0.12); color: #bcdcff; font-size: 0.92rem; line-height: 1.4; }
+.lv-wait > svg { margin-top: 2px; }
+.lv-wait b { display: block; color: var(--white); }
+.lv-admin { border-top: 1px solid var(--line); padding-top: 12px; display: flex; flex-direction: column; gap: 8px; }
+.lv-admin h3 { margin: 0; font-size: 0.95rem; }
+.lv-admin p { margin: 0; font-size: 0.84rem; color: var(--mute); line-height: 1.45; }
+.lv-admin .lv-btn { border-color: var(--red); color: #ff9a9e; background: rgba(229, 72, 77, 0.1); width: 100%; }
+.lv-err { display: flex; align-items: flex-start; gap: 10px; padding: 10px 14px; border-radius: 12px; border: 1px solid var(--red); background: rgba(229, 72, 77, 0.16); color: #ffb3b6; font-weight: 600; font-size: 0.92rem; line-height: 1.4; }
+.lv-err > svg { margin-top: 2px; }
+.lv-reason { display: flex; flex-direction: column; gap: 10px; }
+.lv-warn { display: flex; align-items: flex-start; gap: 10px; padding: 12px 14px; border-radius: 12px; border: 1px solid var(--orange); background: rgba(255, 181, 71, 0.12); color: #ffd592; font-weight: 600; font-size: 0.95rem; line-height: 1.4; }
+.lv-warn > svg { margin-top: 2px; color: var(--orange); }
+.lv-dlg-note { display: flex; align-items: flex-start; gap: 10px; padding: 10px 12px; border-radius: 12px; border: 1px solid var(--orange); background: rgba(255, 181, 71, 0.12); color: #ffd592; font-weight: 600; font-size: 0.9rem; }
+.lv-dlg-note > svg { margin-top: 2px; }
+
+/* ---------- scorecard ---------- */
+.lv-sc { background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); padding: 14px 12px 10px; }
+.lv-sc-head { display: flex; align-items: center; gap: 12px; padding: 0 2px 10px; }
+.lv-sc-head .lv-tb { flex: 0 0 auto; }
+.lv-sc-head .lv-sct { flex: 1; min-width: 0; line-height: 1.2; }
+.lv-sc-head .lv-sct small { display: block; font-size: 0.7rem; font-weight: 800; letter-spacing: 0.08em; color: var(--mute); text-transform: uppercase; }
+.lv-sc-head .lv-sct b { font-size: 1.02rem; overflow-wrap: anywhere; }
+.lv-sc-head .lv-sctot { text-align: right; line-height: 1.15; }
+.lv-sc-head .lv-sctot b { display: block; font-family: var(--font-num); font-variant-numeric: tabular-nums; font-size: 1.5rem; }
+.lv-sc-head .lv-sctot small { font-size: 0.74rem; color: var(--mute); font-weight: 600; }
+table.lv-t { width: 100%; border-collapse: collapse; font-size: 0.86rem; }
+table.lv-t th { padding: 8px 4px; text-align: right; font-size: 0.7rem; font-weight: 800; letter-spacing: 0.07em; text-transform: uppercase; color: var(--mute); border-top: 1px solid var(--line); }
+table.lv-t td { padding: 8px 4px; text-align: right; border-top: 1px solid var(--line); vertical-align: middle; font-family: var(--font-num); font-variant-numeric: tabular-nums; font-weight: 700; }
+table.lv-t th:first-child, table.lv-t td:first-child { text-align: left; padding-left: 2px; font-family: inherit; font-variant-numeric: normal; }
+table.lv-t td:first-child b { display: block; font-size: 0.92rem; font-weight: 800; overflow-wrap: anywhere; }
+table.lv-t td:first-child small { display: block; font-size: 0.74rem; font-weight: 500; color: var(--mute); overflow-wrap: anywhere; }
+table.lv-t td.hi { color: var(--gold); }
+.lv-ext { margin: 0; padding: 10px 2px 4px; border-top: 1px solid var(--line); font-size: 0.82rem; color: var(--mute); line-height: 1.5; }
+.lv-ext b { color: var(--white); }
+.lv-fow-h { margin: 10px 2px 6px; font-size: 0.7rem; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; color: var(--mute); }
+.lv-fow { display: flex; flex-wrap: wrap; gap: 6px; margin: 0 2px 10px; padding: 0; list-style: none; }
+.lv-fow li { min-height: 28px; padding: 4px 10px; border-radius: 999px; border: 1px solid var(--line); background: var(--card2); font-size: 0.76rem; font-weight: 600; display: inline-flex; align-items: center; gap: 6px; }
+.lv-fow li b { font-family: var(--font-num); font-variant-numeric: tabular-nums; }
+.lv-tl { background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); padding: 14px; }
+.lv-tl ul { margin: 8px 0 0; padding-left: 18px; line-height: 1.6; font-size: 0.86rem; color: var(--mute); }
+
+/* ---------- wide screens: live on the left, gate and scorecard on the right ---------- */
+@media (min-width: 1360px) {
+  .app.has-nav > .page:has(.lv-root.two) { flex: 0 1 1080px; }
+  .lv-root.two { display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 6fr); gap: 16px; align-items: start; }
+  .lv-root.two > .lv-main { position: sticky; top: 72px; max-height: calc(100dvh - 88px); overflow-y: auto; scrollbar-width: thin; }
+}
+@media (prefers-reduced-motion: reduce) { .lv-root * { transition: none !important; animation: none !important; } }
+
+/* the Admin take-over confirm: a filled red button, as in the proposal (the dialog sits inside the gate card) */
+.lv-gate .dlg-actions .btn.red { background: var(--red-solid); border-color: var(--red); color: #fff; }

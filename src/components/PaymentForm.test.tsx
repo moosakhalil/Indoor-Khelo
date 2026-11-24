@@ -9,7 +9,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 configure({ asyncUtilTimeout: 5000 });
 const refresh = vi.fn();
 vi.mock("next/navigation", () => ({ useRouter: () => ({ refresh, push: vi.fn() }) }));
-vi.mock("@/app/actions7", () => ({ createVenueAction: vi.fn(), updateVenueAction: vi.fn(), createBookingAction: vi.fn(), updateBookingAction: vi.fn(), updatePaymentAction: vi.fn() }));
+vi.mock("@/app/actions7", () => ({ createVenueAction: vi.fn(), updateVenueAction: vi.fn(), createBookingAction: vi.fn(), updateBookingAction: vi.fn(), updatePaymentAction: vi.fn(), deletePaymentAction: vi.fn() }));
 
 import { PaymentForm, QueuedPayments } from "@/components/Forms7";
 import { flushPayments, readQueuedPayments } from "@/lib/outbox";
@@ -55,12 +55,12 @@ const fill = (who: string, amount: string) => {
 describe("recording a payment", () => {
   it("online: validated, saved at once, form cleared, the page refreshed", async () => {
     render(<PaymentForm communityId={COMMUNITY} bookingId={BOOKING} people={people} share={600} />);
-    fireEvent.click(screen.getByRole("button", { name: "Record the payment" }));
+    fireEvent.click(screen.getByRole("button", { name: "Record payment" }));
     expect(screen.getByText("Choose who paid.")).toBeTruthy();             // nothing is sent until it is valid
     expect(screen.getByText(/Amount must be a whole number/)).toBeTruthy();
     expect(calls).toBe(0);
     fill(`u:${ALI}`, "600");
-    fireEvent.click(screen.getByRole("button", { name: "Record the payment" }));
+    fireEvent.click(screen.getByRole("button", { name: "Record payment" }));
     await screen.findByText("Recorded.");
     expect(saved).toHaveLength(1);
     expect(saved[0]).toMatchObject({ amount: "600", payer: `u:${ALI}`, method: "cash", kind: "payment" });
@@ -74,10 +74,10 @@ describe("recording a payment", () => {
     fireEvent.change(screen.getByLabelText("Refunded to"), { target: { value: "__other" } });
     fireEvent.change(screen.getByLabelText("Name of the person"), { target: { value: "Zed Guest" } });
     fireEvent.change(screen.getByLabelText(/Amount/), { target: { value: "12.5" } });
-    fireEvent.click(screen.getByRole("button", { name: "Record the refund" }));
+    fireEvent.click(screen.getByRole("button", { name: "Record refund" }));
     expect(screen.getByText(/Amount must be a whole number/)).toBeTruthy();
     fireEvent.change(screen.getByLabelText(/Amount/), { target: { value: "250" } });
-    fireEvent.click(screen.getByRole("button", { name: "Record the refund" }));
+    fireEvent.click(screen.getByRole("button", { name: "Record refund" }));
     await screen.findByText("Recorded.");
     expect(saved[0]).toMatchObject({ kind: "refund", payer: "g:Zed Guest", amount: "250" });
   });
@@ -86,13 +86,13 @@ describe("recording a payment", () => {
     setOnline(false);
     render(<><PaymentForm communityId={COMMUNITY} bookingId={BOOKING} people={people} share={600} /><QueuedPayments bookingId={BOOKING} /></>);
     fill(`u:${ALI}`, "700");
-    fireEvent.click(screen.getByRole("button", { name: "Record the payment" }));
+    fireEvent.click(screen.getByRole("button", { name: "Record payment" }));
     await screen.findByText(/marked “not synced”/);
     expect(saved).toHaveLength(0);
     const queued = await readQueuedPayments(BOOKING);
     expect(queued).toHaveLength(1);
     expect(queued[0]).toMatchObject({ status: "waiting", payment: { amount: "700" } });
-    await screen.findByText(/Not synced yet \(1\)/);                              // shown on the booking screen, clearly marked
+    await screen.findByText(/1 on this phone/);                              // shown on the booking screen, clearly marked
     expect(screen.getByText(/waiting to sync/)).toBeTruthy();
     // the signal returns: everything waiting is sent
     setOnline(true);
@@ -112,13 +112,13 @@ describe("recording a payment", () => {
     const { queuePayment } = await import("@/lib/outbox");
     await queuePayment({ id: randomUUID(), communityId: COMMUNITY, bookingId: BOOKING, createdAt: Date.now(), status: "waiting", reason: null, payment: { kind: "refund", amount: "900", paidOn: "2026-11-24", method: "cash", reference: "", payer: `u:${ALI}` } });
     render(<QueuedPayments bookingId={BOOKING} />);
-    await screen.findByText(/Not synced yet \(1\)/);
+    await screen.findByText(/1 on this phone/);
     await flushPayments();
     await screen.findByText(/Send now/);
     fireEvent.click(screen.getByRole("button", { name: "Send now" }));
     await screen.findByText(/The server did not accept it: A refund cannot be more than/);
     fireEvent.click(screen.getByRole("button", { name: "Discard" }));
-    await waitFor(() => expect(screen.queryByText(/Not synced yet/)).toBeNull());
+    await waitFor(() => expect(screen.queryByText(/on this phone/)).toBeNull());
     expect(await readQueuedPayments(BOOKING)).toEqual([]);
   });
 });

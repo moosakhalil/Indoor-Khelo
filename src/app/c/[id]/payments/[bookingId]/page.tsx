@@ -1,27 +1,32 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { BookingStatusChip, MoneyCard, StatusPill } from "@/components/BookingBits";
+import ActionMenu from "@/components/ActionMenu";
+import { BookingBadge, MoneyHero, Notice, StatusBadge } from "@/components/BookingBits";
+import { DeleteBooking, FlashToast, PaymentRecordRow, RecordSheet, RecordTrigger, RemindControl, StatusControl, type FormProps, type RecordRowData } from "@/components/BookingActions";
 import Frame from "@/components/Frame";
-import { PaymentForm, QueuedPayments } from "@/components/Forms7";
+import { QueuedPayments, type PayHint } from "@/components/Forms7";
+import PbIcon from "@/components/PbIcons";
 import Shirt from "@/components/Shirt";
-import { bookingStatusAction, deleteBookingAction, deletePaymentAction, remindPaymentsAction, verifyPaymentAction } from "@/app/actions7";
+import TeamBadge from "@/components/TeamBadge";
 import { getBooking, linkedMatches, listHistory, listPayments, listSharing, moneyView } from "@/lib/bookings";
 import { describeHistory } from "@/lib/bookingText";
 import { listApprovedMembers, requireMember } from "@/lib/community";
 import { formatWhen } from "@/lib/matchRules";
-import { BOOKING_STATUSES, METHODS, money, surplus } from "@/lib/payments";
+import { METHODS, money, netFor, surplus } from "@/lib/payments";
+import { payerKey, personLine, refundHolders, remindPlan, reminderWait, splitTeams } from "@/lib/pbBooking";
 import { requireAcceptedUser } from "@/lib/session";
 import { getZone } from "@/lib/zone";
 
 export const metadata: Metadata = { title: "Booking" };
 export const dynamic = "force-dynamic";
 
-type Q = { created?: string; saved?: string; status?: string; shared?: string; linked?: string; removed?: string; reminded?: string; e?: string; n?: string };
-const E: Record<string, string> = {
-  nobody: "Everyone's suggested share is covered, so there is nobody to remind.", bad_state: "That cannot be done in this booking's current state.", forbidden: "Only members of this community can do that.",
-  not_found: "That could not be found.",
+type Q = { created?: string; saved?: string; status?: string; shared?: string; linked?: string; removed?: string; reminded?: string; record?: string; e?: string; n?: string };
+// Refusals (red) and plain notices (not red). Same wording as before.
+const REFUSALS: Record<string, string> = {
+  bad_state: "That cannot be done in this booking's current state.", forbidden: "Only members of this community can do that.", not_found: "That could not be found.",
 };
+const NOTICES: Record<string, string> = { nobody: "Everyone's suggested share is covered, so there is nobody to remind." };
 
 // Everything about one booking: the cost, who shares it, what has been contributed, and the history. Visible to members only.
 export default async function BookingPage({ params, searchParams }: { params: Promise<{ id: string; bookingId: string }>; searchParams: Promise<Q> }) {
@@ -35,144 +40,214 @@ export default async function BookingPage({ params, searchParams }: { params: Pr
   const view = moneyView(b, sharing, payments);
   const sur = surplus(b.total_cost, sharing.length);
   const memberName = new Map(members.map((m) => [m.user_id, m.name]));
+  const numberOf = new Map<string, number | null>([...members.map((m) => [m.user_id, m.player_number] as const), ...sharing.filter((s) => s.user_id).map((s) => [s.user_id!, s.player_number] as const)]);
   // who can be picked in the payment form: everyone in the sharing list, then the other members
   const people = [
-    ...sharing.map((s) => ({ value: s.user_id ? `u:${s.user_id}` : `g:${s.name}`, label: `${s.name}${s.guest ? " (guest)" : ""}` })),
-    ...members.filter((m) => !sharing.some((s) => s.user_id === m.user_id)).map((m) => ({ value: `u:${m.user_id}`, label: m.name })),
+    ...sharing.map((s) => ({ value: s.user_id ? `u:${s.user_id}` : `g:${s.name}`, label: `${s.name}${s.guest ? " (guest)" : ""}`, number: s.guest ? null : s.player_number })),
+    ...members.filter((m) => !sharing.some((s) => s.user_id === m.user_id)).map((m) => ({ value: `u:${m.user_id}`, label: m.name, number: m.player_number })),
   ];
-  const notice = q.e === "too_soon" ? `A reminder was sent recently. You can send another in about ${q.n ?? "60"} minutes.` : q.e ? E[q.e] ?? null : null;
+  // what the form may suggest for each person: what is still to the suggested share, and what they have paid in (the most a refund can be)
+  const suggest: Record<string, PayHint> = {};
+  for (const p of people) {
+    const k = payerKey(p.value);
+    suggest[p.value] = { still: view.people.find((v) => v.key === k)?.stillSuggested ?? 0, paidIn: Math.max(0, netFor(view.list, k)) };
+  }
   const done = b.status === "cancelled";
   const method = (m: string) => METHODS.find((x) => x.value === m)?.label ?? m;
   const base = `/c/${id}/payments/${bookingId}`;
+  const when = formatWhen(b.starts_at, tz);
+  const form: FormProps = { communityId: id, bookingId, people, share: view.share, suggest, remaining: view.summary.balance };
+  const me = view.people.find((p) => p.user_id === user.id) ?? null;
+  const plan = remindPlan(view.people, user.id, view.share);
+  const wait = reminderWait(b.last_reminder_at, Date.now());
+  const remind = {
+    communityId: id, bookingId, venue: b.venue_name, share: view.share, balance: view.summary.balance, due: plan.due.map((p) => ({ name: p.name, net: p.net })), guests: plan.guests, selfDue: plan.selfDue, waitMinutes: wait, noPeople: sharing.length === 0,
+  };
+  const holders = done ? refundHolders(payments, (uid) => memberName.get(uid)) : [];
+  const heldTotal = holders.reduce((a, h) => a + h.held, 0);
+  const refusal = q.e ? REFUSALS[q.e] ?? null : null;
+  const info = q.e === "too_soon" ? `A reminder was sent recently. You can send another in about ${q.n ?? wait ?? 60} minutes.` : q.e ? NOTICES[q.e] ?? null : null;
+  const flash = q.saved ? "Saved." : q.status ? "Status changed." : q.shared ? "Saved. The people added were told their suggested share." : q.linked ? "Linked matches saved." : q.removed ? "Record removed."
+    : q.reminded ? `Reminder sent to ${q.reminded} ${q.reminded === "1" ? "person" : "people"}.` : null;
+
+  const rows: RecordRowData[] = payments.map((p) => ({
+    id: p.id, payerName: p.payer_user_id ? memberName.get(p.payer_user_id) ?? p.payer_name : p.payer_name, payerHref: p.payer_user_id ? `/c/${id}/players/${p.payer_user_id}` : null,
+    number: p.payer_user_id ? numberOf.get(p.payer_user_id) ?? null : null, guest: !p.payer_user_id, kind: p.kind, amount: p.amount, methodLabel: method(p.method), paidOn: p.paid_on, reference: p.reference,
+    recordedBy: p.created_by_name ?? "—", changedBy: p.changed_by_name, checkedBy: p.verified_at ? p.verified_by_name ?? "a member" : null,
+  }));
+
+  const actions = !done ? (
+    <div className="pb-hero-actions">
+      <RecordTrigger className="btn gold" detail={{}}><PbIcon name="plus" size={18} />Record payment</RecordTrigger>
+      <RemindControl {...remind} />
+    </div>
+  ) : null;
 
   return (
-    <Frame communityId={id} title="Booking" back={`/c/${id}/payments`} right={<BookingStatusChip status={b.status} />}>
-      <div className="stack">
-        {q.created && <div className="banner green" role="status">Booking created. Next: choose who shares the cost.</div>}
-        {q.saved && <div className="banner green" role="status">Saved.</div>}
-        {q.status && <div className="banner green" role="status">Status changed.</div>}
-        {q.shared && <div className="banner green" role="status">Saved. The people added were told their suggested share.</div>}
-        {q.linked && <div className="banner green" role="status">Linked matches saved.</div>}
-        {q.removed && <div className="banner green" role="status">Record removed.</div>}
-        {q.reminded && <div className="banner green" role="status">Reminder sent to {q.reminded} {q.reminded === "1" ? "person" : "people"}.</div>}
-        {notice && <div className="banner mute" role="status">{notice}</div>}
-        {done && <div className="banner red">This booking is cancelled. Its payment records are kept, and refunds can still be recorded by hand.</div>}
+    <Frame
+      communityId={id} title={b.venue_name} back={`/c/${id}/payments`}
+      subtitle={<small className="muted pb-sub1">{when} · {b.duration_minutes} min</small>}
+      right={<ActionMenu label="Booking actions" items={[
+        { label: "Edit booking", href: `${base}/edit` }, { label: "Who shares the cost", href: `${base}/share` }, { label: "Link matches", href: `${base}/link` },
+      ]} />}
+      panel={<div className="stack"><RecordSheet mode="panel" form={form} />
+        {!done && <section className="card pb-panel-card"><h2>Reminders</h2><p className="muted small">An in-app alert to the people whose suggested share is not covered yet. It does not make anyone pay. At most once an hour.</p><RemindControl {...remind} /></section>}
+      </div>}>
+      <div className="stack pb-page">
+        {q.created && <Notice tone="green" action={<Link href={`${base}/share`} className="btn gold small">Choose people</Link>}>Booking created. Next: choose who shares the cost.</Notice>}
+        {q.saved && <Notice tone="green">Saved.</Notice>}
+        {q.status && <Notice tone="green">Status changed.</Notice>}
+        {q.shared && <Notice tone="green">Saved. The people added were told their suggested share.</Notice>}
+        {q.linked && <Notice tone="green">Linked matches saved.</Notice>}
+        {q.removed && <Notice tone="green">Record removed.</Notice>}
+        {q.reminded && <Notice tone="green">Reminder sent to {q.reminded} {q.reminded === "1" ? "person" : "people"}. Another can go out in {wait || 60} minutes.</Notice>}
+        {info && <Notice tone={q.e === "too_soon" ? "gold" : "mute"}>{info}</Notice>}
+        {refusal && <Notice tone="red" role="alert">{refusal}</Notice>}
+        {done && <Notice tone="red" role="status">This booking is cancelled. Its payment records are kept, and refunds can still be recorded by hand.</Notice>}
+        {flash && <FlashToast message={flash} />}
 
-        <section className="card">
-          <b style={{ fontSize: "1.1rem" }}>{b.venue_name}</b>
-          <small className="muted" style={{ display: "block" }}>{b.venue_address || "No address"}{b.venue_contact ? ` · ${b.venue_contact}` : ""}</small>
-          <div className="list" style={{ marginTop: 8 }}>
-            <div className="item space"><span className="muted">When</span><b>{formatWhen(b.starts_at, tz)}</b></div>
-            <div className="item space"><span className="muted">Duration</span><b>{b.duration_minutes} minutes</b></div>
-            {b.reference && <div className="item space"><span className="muted">Reference</span><b>{b.reference}</b></div>}
-            {b.notes && <div className="item" style={{ display: "block" }}><span className="muted">Notes</span><p style={{ margin: "4px 0 0" }}>{b.notes}</p></div>}
-          </div>
-          <p className="muted small" style={{ margin: "8px 0 0" }}>Added by <b style={{ color: "var(--white)" }}>{b.created_by_name ?? "—"}</b> · Changed by <b style={{ color: "var(--white)" }}>{b.changed_by_name ?? "—"}</b> ({formatWhen(b.updated_at, tz)})</p>
-          <div className="two" style={{ marginTop: 10 }}>
-            <Link href={`${base}/edit`} className="btn ghost small" style={{ width: "100%" }}>Edit booking</Link>
-            <Link href={`${base}/link`} className="btn ghost small" style={{ width: "100%" }}>Link matches</Link>
-          </div>
-          {matches.length > 0 && <div className="row wrap" style={{ marginTop: 8 }}>{matches.map((m) => <Link key={m.id} href={`/c/${id}/matches/${m.id}`} className="chip">{m.name}</Link>)}</div>}
-        </section>
+        <nav className="pb-jump" aria-label="Jump to a section">
+          <a href="#people" className="pb-jchip">People <b>{sharing.length}</b></a>
+          <a href="#payments" className="pb-jchip">Payments <b>{payments.length}</b></a>
+          <a href="#details" className="pb-jchip">Details</a>
+          <a href="#history" className="pb-jchip">History</a>
+        </nav>
 
-        <MoneyCard s={view.summary} share={view.share} people={sharing.length} surplusAmount={sur} />
+        <QueuedPayments bookingId={bookingId} people={people} />
 
-        <section className="card" id="sharing">
-          <div className="row space"><h2 style={{ fontSize: "1rem" }}>Who shares the cost <small className="muted">({sharing.length})</small></h2><Link href={`${base}/share`} className="chip gold">Choose people</Link></div>
-          {view.people.length === 0 ? <p className="muted small" style={{ margin: "8px 0 0" }}>Nobody chosen yet.</p> : (
-            <div className="list" style={{ marginTop: 6 }}>
-              {view.people.map((p) => (
-                <div key={p.id} className="item" style={{ alignItems: "flex-start" }}>
-                  <Shirt number={p.player_number} size="small" label={p.guest ? "Guest, no player number" : undefined} />
-                  <span className="t grow"><b>{p.name}{p.guest ? " (guest)" : ""}</b><small>Suggested {money(p.share)} · paid {money(Math.max(0, p.net))}{p.stillSuggested > 0 && p.net < p.share ? ` · ${money(p.stillSuggested)} to suggested` : ""}</small></span>
-                  <StatusPill status={p.status} />
-                </div>
-              ))}
-            </div>
-          )}
-          {view.summary.contributed > 0 && <p className="muted small" style={{ margin: "8px 0 0" }}>Someone who has paid more than their share is simply shown as paid. “Pending check” means the money was recorded and nobody has marked it checked yet.</p>}
-        </section>
+        <MoneyHero s={view.summary} status={b.status} share={view.share} people={sharing.length} surplusAmount={sur} actions={actions} />
 
-        <QueuedPayments bookingId={bookingId} />
-
-        <section className="card" id="record">
-          <h2 style={{ fontSize: "1rem", marginBottom: 8 }}>Record a payment or refund</h2>
-          <PaymentForm communityId={id} bookingId={bookingId} people={people} share={view.share} />
-        </section>
-
-        <section className="card" id="payments">
-          <h2 style={{ fontSize: "1rem" }}>Payment records <small className="muted">({payments.length})</small></h2>
-          {payments.length === 0 ? <p className="muted small" style={{ margin: "6px 0 0" }}>Nothing recorded yet.</p> : (
-            <div className="list" style={{ marginTop: 6 }}>
-              {payments.map((p) => (
-                <div key={p.id} className="item" style={{ alignItems: "flex-start", flexDirection: "column", gap: 6 }}>
-                  <div className="row space" style={{ width: "100%" }}>
-                    <span><b>{p.payer_user_id ? <Link href={`/c/${id}/players/${p.payer_user_id}`}>{memberName.get(p.payer_user_id) ?? p.payer_name}</Link> : p.payer_name}</b> <small className="muted">{p.kind === "refund" ? "refund" : "paid"} · {method(p.method)}</small></span>
-                    <b style={{ color: p.kind === "refund" ? "#ff9a9e" : "#4be38a" }}>{p.kind === "refund" ? "−" : "+"}{money(p.amount)}</b>
-                  </div>
-                  <small className="muted">{p.paid_on}{p.reference ? ` · ${p.reference}` : ""} · recorded by {p.created_by_name ?? "—"}{p.changed_by_name && p.changed_by_name !== p.created_by_name ? `, changed by ${p.changed_by_name}` : ""}</small>
-                  <div className="row wrap" style={{ gap: 8 }}>
-                    <span className={`pill ${p.verified_at ? "green" : "orange"}`}>{p.verified_at ? `CHECKED BY ${(p.verified_by_name ?? "A MEMBER").toUpperCase()}` : "NOT CHECKED YET"}</span>
-                    <form action={verifyPaymentAction}>
-                      <input type="hidden" name="communityId" value={id} /><input type="hidden" name="bookingId" value={bookingId} /><input type="hidden" name="paymentId" value={p.id} /><input type="hidden" name="on" value={p.verified_at ? "0" : "1"} />
-                      <button className="chip" style={{ minHeight: 30 }}>{p.verified_at ? "Mark not checked" : "Mark checked"}</button>
-                    </form>
-                    <Link href={`${base}/pay/${p.id}`} className="chip" style={{ minHeight: 30 }}>Edit</Link>
-                    <details>
-                      <summary className="chip" style={{ minHeight: 30, listStyle: "none", cursor: "pointer" }}>Remove</summary>
-                      <form action={deletePaymentAction} style={{ marginTop: 6 }}>
-                        <input type="hidden" name="communityId" value={id} /><input type="hidden" name="bookingId" value={bookingId} /><input type="hidden" name="paymentId" value={p.id} />
-                        <button className="btn red small">Yes, remove this record</button>
-                      </form>
-                    </details>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </section>
-
-        {!done && (
-          <section className="card">
-            <h2 style={{ fontSize: "1rem" }}>Reminders</h2>
-            <p className="muted small" style={{ margin: "4px 0 8px" }}>Sends an alert to the people whose suggested share is not covered yet. It does not make anyone pay: it only reminds. At most once an hour.</p>
-            <form action={remindPaymentsAction}>
-              <input type="hidden" name="communityId" value={id} /><input type="hidden" name="bookingId" value={bookingId} />
-              <button className="btn ghost small">Remind everyone who has not paid</button>
-            </form>
+        {me && !done && (
+          <section className="card pb-yours" aria-label="Your share">
+            <div className="row space"><b>Your share</b><StatusBadge status={me.status} /></div>
+            <div className="pb-yours-n"><span className="pb-big2">{money(view.share)}</span><small className="muted">suggested for you</small><small className="muted">{personLine(me)}</small></div>
+            <RecordTrigger className="btn gold" detail={{ payer: `u:${user.id}`, amount: me.stillSuggested }}><PbIcon name="wallet" size={18} />Record my payment</RecordTrigger>
           </section>
         )}
 
-        <section className="card">
-          <h2 style={{ fontSize: "1rem" }}>Booking status</h2>
-          <div className="row wrap" style={{ marginTop: 8 }}>
-            {BOOKING_STATUSES.filter((s) => s !== b.status).map((s) => (
-              <form key={s} action={bookingStatusAction}>
-                <input type="hidden" name="communityId" value={id} /><input type="hidden" name="bookingId" value={bookingId} /><input type="hidden" name="status" value={s} />
-                <button className={`chip${s === "cancelled" ? " red" : ""}`}>Mark {s}</button>
-              </form>
-            ))}
+        {done && (
+          <section className="card" id="refunds">
+            <h2 className="pb-h2">Refunds to give back</h2>
+            {holders.length === 0 ? (
+              <p className="muted small" style={{ margin: "6px 0 0" }}>Nothing to give back. Everyone who paid has been refunded.</p>
+            ) : (
+              <>
+                <p className="muted small" style={{ margin: "4px 0 0" }}>{holders.length} {holders.length === 1 ? "person still holds" : "people still hold"} {money(heldTotal)}. Hand it back yourself, then write it down here.</p>
+                <div className="pb-rows">
+                  {holders.map((h) => (
+                    <div key={h.value} className="pb-person">
+                      <Shirt number={h.userId ? numberOf.get(h.userId) ?? null : null} size="normal" label={h.userId ? undefined : "Guest, no player number"} />
+                      <span className="t grow"><b>{h.name}{!h.userId ? " (guest)" : ""}</b><small>Paid in {money(h.held)}</small></span>
+                      <RecordTrigger className="btn ghost small" detail={{ kind: "refund", payer: h.value, amount: h.held }} label={`Record a refund to ${h.name}`}><PbIcon name="refund" size={16} />Record refund</RecordTrigger>
+                    </div>
+                  ))}
+                </div>
+              </>
+            )}
+          </section>
+        )}
+
+        <section className="card" id="people">
+          <div className="row space"><h2 className="pb-h2">Who shares the cost <small className="muted">({sharing.length})</small></h2><Link href={`${base}/share`} className="chip gold pb-chip44"><PbIcon name="users" size={16} />Choose people</Link></div>
+          {view.people.length === 0 ? (
+            <div className="pb-empty">
+              <PbIcon name="users" size={26} />
+              <p><b>Nobody chosen yet.</b> Choose who shares the cost to see a suggested share and who has paid.</p>
+              <Link href={`${base}/share`} className="btn gold small">Choose people</Link>
+            </div>
+          ) : (
+            <div className="pb-rows">
+              {view.people.map((p) => (
+                <div key={p.id} className="pb-person">
+                  <Shirt number={p.player_number} size="normal" label={p.guest ? "Guest, no player number" : undefined} />
+                  <span className="t grow">
+                    <b>{p.name}{p.guest ? " (guest)" : ""}{p.user_id === user.id && <span className="pb-you">You</span>}</b>
+                    <small className="muted">{personLine(p)}</small>
+                    <StatusBadge status={p.status} />
+                  </span>
+                  {!done && (
+                    <RecordTrigger className="pb-plus" label={`Record a payment for ${p.name}`} detail={{ payer: p.user_id ? `u:${p.user_id}` : `g:${p.name}`, amount: p.stillSuggested }}><PbIcon name="plus" size={20} /></RecordTrigger>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+          {view.summary.contributed > 0 && <p className="muted small" style={{ margin: "10px 0 0" }}>Someone who has paid more than their share is simply shown as paid. “Pending check” means the money was recorded and nobody has marked it checked yet.</p>}
+        </section>
+
+        <section className="card" id="payments">
+          <div className="row space">
+            <h2 className="pb-h2">Payment records <small className="muted">({payments.length})</small></h2>
+            <RecordTrigger className="chip gold pb-chip44" detail={{}}><PbIcon name="plus" size={16} />Record</RecordTrigger>
           </div>
-          {payments.length === 0 && (
-            <details style={{ marginTop: 10 }}>
-              <summary className="btn red small" style={{ listStyle: "none", cursor: "pointer" }}>Delete booking…</summary>
-              <form action={deleteBookingAction} style={{ marginTop: 8 }}>
-                <input type="hidden" name="communityId" value={id} /><input type="hidden" name="bookingId" value={bookingId} />
-                <p className="muted small" style={{ margin: "0 0 8px" }}>Only a booking with no payment records can be deleted. Otherwise cancel it, and the records are kept.</p>
-                <button className="btn red small">Yes, delete this booking</button>
-              </form>
-            </details>
+          {payments.length === 0 ? (
+            <div className="pb-empty">
+              <PbIcon name="wallet" size={26} />
+              <p><b>Nothing recorded yet.</b> Recording works with no signal too: it is saved on the phone and sent later.</p>
+            </div>
+          ) : (
+            <div className="pb-rows">
+              {rows.map((r) => <PaymentRecordRow key={r.id} communityId={id} bookingId={bookingId} base={base} r={r} />)}
+            </div>
           )}
         </section>
 
+        <section className="card" id="details">
+          <div className="row space"><h2 className="pb-h2">Details</h2><Link href={`${base}/edit`} className="chip pb-chip44"><PbIcon name="edit" size={16} />Edit</Link></div>
+          <div className="pb-kv">
+            <div><span className="muted">Venue</span><b>{b.venue_name}</b></div>
+            <div><span className="muted">Address</span><b>{b.venue_address || "No address"}{b.venue_contact ? <small className="muted"> · {b.venue_contact}</small> : null}</b></div>
+            <div><span className="muted">When</span><b>{when}</b></div>
+            <div><span className="muted">Duration</span><b>{b.duration_minutes} minutes</b></div>
+            {b.reference && <div><span className="muted">Reference</span><b>{b.reference}</b></div>}
+            {b.notes && <div><span className="muted">Notes</span><b className="pb-notes">{b.notes}</b></div>}
+          </div>
+          <p className="muted small" style={{ margin: "10px 0 0" }}>Added by <b style={{ color: "var(--white)" }}>{b.created_by_name ?? "—"}</b> · Changed by <b style={{ color: "var(--white)" }}>{b.changed_by_name ?? "—"}</b> ({formatWhen(b.updated_at, tz)})</p>
+        </section>
+
+        <section className="card" id="matches">
+          <div className="row space"><h2 className="pb-h2">Linked matches <small className="muted">({matches.length})</small></h2><Link href={`${base}/link`} className="chip pb-chip44"><PbIcon name="link" size={16} />Link matches</Link></div>
+          {matches.length === 0 ? <p className="muted small" style={{ margin: "8px 0 0" }}>No matches linked yet. Linking never changes a score or a statistic.</p> : (
+            <div className="pb-rows">
+              {matches.map((m) => {
+                const t = splitTeams(m.name);
+                return (
+                  <Link key={m.id} href={`/c/${id}/matches/${m.id}`} className="pb-match">
+                    {t ? <span className="pb-pair"><TeamBadge name={t[0]} size="sm" /><TeamBadge name={t[1]} size="sm" /></span> : null}
+                    <span className="grow pb-mname">{m.name}</span>
+                    <PbIcon name="chevron" size={18} />
+                  </Link>
+                );
+              })}
+            </div>
+          )}
+        </section>
+
+        <section className="card" id="status">
+          <h2 className="pb-h2">Booking status</h2>
+          <div style={{ margin: "10px 0 6px" }}><BookingBadge status={b.status} /></div>
+          <StatusControl communityId={id} bookingId={bookingId} status={b.status} />
+          <div className="pb-delete">
+            {payments.length === 0 ? (
+              <>
+                <p className="muted small" style={{ margin: "0 0 8px" }}>Only a booking with no payment records can be deleted. Otherwise cancel it, and the records are kept.</p>
+                <DeleteBooking communityId={id} bookingId={bookingId} venue={b.venue_name} when={when} />
+              </>
+            ) : (
+              <p className="pb-lock"><PbIcon name="lock" size={16} />A booking with payment records cannot be deleted. Cancel it instead; the records are kept.</p>
+            )}
+          </div>
+        </section>
+
         <section className="card" id="history">
-          <h2 style={{ fontSize: "1rem" }}>History</h2>
-          <ul className="muted small" style={{ margin: "8px 0 0", paddingLeft: 18, lineHeight: 1.7 }}>
-            {history.map((h) => <li key={h.id}>{describeHistory(h)} <span style={{ opacity: 0.7 }}>({formatWhen(h.created_at, tz)})</span></li>)}
-          </ul>
+          <h2 className="pb-h2">History</h2>
+          <ol className="pb-hist">
+            {history.map((h) => <li key={h.id}><span>{describeHistory(h)}</span><time>{formatWhen(h.created_at, tz)}</time></li>)}
+          </ol>
         </section>
         <p className="muted small" style={{ margin: 0 }}>Bookings and payments are kept apart from match results. They never change a score or a statistic.</p>
       </div>
+      <RecordSheet mode="sheet" form={form} autoOpen={q.record === "me" && !done ? { payer: `u:${user.id}`, amount: me?.stillSuggested } : null} />
     </Frame>
   );
 }

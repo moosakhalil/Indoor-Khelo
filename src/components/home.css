@@ -1,0 +1,119 @@
+/* Home screen (Builder 1, prefix hm-). Flat colour on cards and buttons; reduced-motion safe (no animation except the live dot). */
+:root { --hm-blue-bg: rgba(90, 169, 255, 0.12); }
+
+.hm-sr { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
+.hm-trunc { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; line-clamp: 2; overflow: hidden; overflow-wrap: anywhere; min-width: 0; }
+.hm-fill { width: 100%; }
+.hm-badge {
+  display: inline-flex; align-items: center; min-height: 24px; padding: 0 10px; border-radius: 999px; background: var(--gold); color: var(--night);
+  font-size: 0.7rem; font-weight: 800; letter-spacing: 0.06em; text-transform: uppercase;
+}
+
+/* ---------- layout: one column on a phone, two from 640 px, community panel from 1360 px ---------- */
+.hm-grid { display: grid; grid-template-columns: minmax(0, 1fr); gap: 12px; padding-bottom: 76px; }
+.hm-grid > * { min-width: 0; }
+.hm-grid > .hm-span:empty { display: none; }
+@media (min-width: 640px) {
+  .hm-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); padding-bottom: 0; align-items: start; }
+  .hm-span { grid-column: 1 / -1; }
+}
+.hm-inpage { display: contents; }
+@media (min-width: 1360px) {
+  .hm-inpage { display: none; }
+}
+.hm-panel { display: flex; flex-direction: column; gap: 12px; }
+
+/* ---------- banners ---------- */
+.hm-banner { display: flex; align-items: center; gap: 12px; padding: 12px 14px; border-radius: var(--radius); background: var(--card); border: 1px solid var(--gold); min-height: 64px; }
+.hm-banner > .hm-ic { color: var(--gold); }
+.hm-banner .t b, .hm-banner .t small { display: block; }
+.hm-banner .t small { color: var(--mute); font-size: 0.8rem; }
+.hm-banner .btn { flex: 0 0 auto; pointer-events: none; }
+/* big text or a 320px screen: the label column keeps a readable width and the button drops below instead of overlapping */
+.hm-banner { flex-wrap: wrap; }
+.hm-banner .t { flex: 1 1 6rem; min-width: 0; }
+
+/* ---------- live score bug ---------- */
+.hm-live-card { background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); padding: 12px 14px; }
+.hm-livepill { display: inline-flex; align-items: center; gap: 6px; min-height: 24px; padding: 0 10px; border-radius: 6px; background: #c62a2f; color: #fff; font-size: 0.72rem; font-weight: 800; letter-spacing: 0.06em; }
+.hm-pulse { width: 8px; height: 8px; border-radius: 50%; background: #fff; animation: hmPulse 1.6s ease-in-out infinite; }
+@keyframes hmPulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.35; } }
+@media (prefers-reduced-motion: reduce) { .hm-pulse { animation: none !important; } }
+.hm-lrows { margin-top: 10px; display: flex; flex-direction: column; gap: 6px; }
+.hm-lrow { display: flex; align-items: center; gap: 10px; padding: 6px 8px; border-radius: 12px; border-left: 3px solid transparent; color: var(--mute); }
+.hm-lrow.bat { background: var(--card2); border-left-color: var(--gold); color: var(--white); }
+.hm-lrow > b:first-of-type { font-size: 1rem; }
+.hm-lrow { flex-wrap: wrap; }
+.hm-lrow > .grow { flex: 1 1 5rem; min-width: 5rem; }
+.hm-lscore { display: flex; align-items: baseline; gap: 6px; flex: 0 0 auto; }
+.hm-lscore b { font-size: 1.6rem; font-weight: 700; line-height: 1; }
+.hm-lscore small { font-size: 0.85rem; color: var(--mute); }
+.hm-chase { margin: 8px 0 0; padding: 8px 10px; border-radius: 10px; background: var(--card2); color: var(--gold); font-size: 0.88rem; font-weight: 700; }
+
+/* ---------- next match ---------- */
+.hm-next { display: flex; flex-direction: column; gap: 10px; }
+.hm-vs { display: flex; flex-direction: column; gap: 6px; padding: 4px 0; min-height: 44px; }
+.hm-vs-badges { display: flex; align-items: center; gap: 10px; }
+.hm-vs-names { font-size: 1.05rem; }
+.hm-reply { display: flex; align-items: center; gap: 10px; padding: 8px 8px 8px 14px; border-radius: 14px; min-height: 56px; }
+.hm-reply.is-in { background: rgba(47, 191, 113, 0.14); border: 1px solid var(--green); color: #7fe0a8; }
+.hm-reply.is-out { background: var(--card2); border: 1px solid var(--line); color: var(--white); }
+.hm-reply .btn { flex: 0 0 auto; }
+.hm-reply-btns .btn { width: 100%; min-height: 48px; padding: 0 8px; font-size: 0.92rem; }
+.hm-reply-btns .btn.green { background: var(--green); color: #06210f; border-color: var(--green); }
+.hm-cancel { display: block; margin: 8px auto 0; min-height: 44px; padding: 0 12px; color: var(--mute); font-weight: 600; text-decoration: underline; }
+
+/* ---------- match day ---------- */
+.hm-day-title { font-size: 1.25rem; margin: 4px 0 6px; }
+.hm-sides { display: grid; grid-template-columns: minmax(0, 1fr); gap: 14px; margin-top: 12px; }
+@media (min-width: 640px) { .hm-sides { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+.hm-ringwrap { display: inline-flex; padding: 2px; border-radius: 14px; border: 2px solid transparent; }
+.hm-ringwrap.mine { border-color: var(--gold); }
+.hm-count { min-width: 28px; height: 28px; padding: 0 8px; border-radius: 999px; background: var(--card2); border: 1px solid var(--line); display: inline-flex; align-items: center; justify-content: center; font-size: 0.85rem; font-weight: 800; }
+.hm-lineup { list-style: none; margin: 8px 0 0; padding: 0; }
+.hm-lineup li { display: flex; align-items: center; gap: 10px; min-height: 52px; border-bottom: 1px solid var(--line); }
+.hm-lineup li:last-child { border-bottom: 0; }
+.hm-nolineup { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-top: 8px; padding: 8px 10px; border-radius: 12px; border: 1px dashed var(--line); }
+
+/* ---------- quick actions ---------- */
+.hm-quick { display: flex; flex-direction: column; gap: 10px; }
+.hm-quick .hm-disabled { opacity: 0.55; cursor: not-allowed; }
+.hm-reason { display: block; margin-top: 6px; text-align: center; }
+.hm-outline { background: transparent; }
+
+/* ---------- empty states ---------- */
+.hm-empty { display: flex; flex-direction: column; align-items: center; text-align: center; gap: 8px; padding: 22px 16px; }
+.hm-empty-ic { width: 64px; height: 64px; border-radius: 20px; background: var(--card2); color: var(--gold); display: inline-flex; align-items: center; justify-content: center; }
+.hm-empty .btn { margin-top: 6px; max-width: 280px; }
+.hm-noresults { display: flex; flex-direction: column; gap: 2px; padding: 18px 8px 8px; text-align: center; min-height: 96px; justify-content: center; }
+
+/* ---------- results ---------- */
+.hm-seeall { display: inline-flex; align-items: center; min-height: 44px; color: var(--gold); font-weight: 700; font-size: 0.85rem; }
+.hm-res { display: flex; align-items: flex-start; gap: 4px; padding: 6px 0; border-bottom: 1px solid var(--line); }
+.hm-res:last-child { border-bottom: 0; }
+.hm-resbody { display: flex; flex-direction: column; gap: 4px; min-width: 0; min-height: 44px; }
+.hm-resbody small { font-size: 0.78rem; }
+.hm-resrow { display: flex; align-items: center; gap: 10px; }
+.hm-rscore { font-size: 1.1rem; font-weight: 700; flex: 0 0 auto; }
+.hm-res .menu { margin-top: 14px; }
+
+/* ---------- community card and links ---------- */
+.hm-me { margin-top: 12px; }
+.hm-link { min-height: 56px; }
+.hm-link .hm-ic:last-child { color: var(--mute); }
+.hm-link-ic { width: 36px; height: 36px; display: inline-flex; align-items: center; justify-content: center; border-radius: 10px; background: var(--card2); color: var(--white); flex: 0 0 auto; }
+
+/* ---------- offline ---------- */
+.hm-offline { display: flex; flex-direction: column; gap: 12px; padding: 14px; border-radius: var(--radius); background: var(--hm-blue-bg); border: 1px solid var(--blue); }
+.hm-offline > .row > .hm-ic { color: var(--blue); margin-top: 2px; }
+.hm-offline .t b, .hm-offline .t small { display: block; }
+.hm-offline .t small { color: #c6dcf7; font-size: 0.85rem; margin-top: 2px; }
+
+/* ---------- floating New match, phones only ---------- */
+.hm-fab {
+  position: fixed; z-index: 25; right: max(16px, env(safe-area-inset-right, 0px)); bottom: calc(96px + env(safe-area-inset-bottom, 0px));
+  display: inline-flex; align-items: center; gap: 8px; min-height: 52px; padding: 0 20px; border-radius: 999px;
+  background: var(--gold); color: var(--night); font-weight: 800; box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
+}
+@media (min-width: 640px) { .hm-fab { display: none; } }
+.hm-comm .t b, .hm-comm .t small { display: block; }

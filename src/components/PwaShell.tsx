@@ -1,8 +1,10 @@
 "use client";
 
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
+import AcIcon from "@/components/AcIcons";
 import { flushAllWaiting } from "@/lib/outbox";
 import { useEffect, useRef, useState } from "react";
+import "./ac-pwa.css";
 
 type InstallEvent = Event & { prompt: () => Promise<void>; userChoice: Promise<{ outcome: string }> };
 
@@ -36,6 +38,7 @@ export default function PwaShell() {
   const [waiting, setWaiting] = useState<ServiceWorker | null>(null);
   const [installEvent, setInstallEvent] = useState<InstallEvent | null>(null);
   const [iosHelp, setIosHelp] = useState<"safari-steps" | "open-safari" | null>(null);
+  const [copied, setCopied] = useState<"done" | "manual" | null>(null);
   const reloaded = useRef(false);
   const router = useRouter();
 
@@ -114,46 +117,83 @@ export default function PwaShell() {
     setInstallEvent(null);
   }
   function notNow() { rememberDismiss(); setInstallEvent(null); setIosHelp(null); }
+  // One tap copies this page's address so it can be pasted into Safari. If the browser refuses, the address is shown to select.
+  async function copyAddress() {
+    const url = window.location.href;
+    try {
+      await navigator.clipboard.writeText(url);
+      setCopied("done");
+    } catch {
+      setCopied("manual");
+    }
+  }
 
+  // The welcome page has its own install row (EnInstallHint), so the floating one is not shown there too.
+  const onWelcome = usePathname() === "/";
+  const iosSteps = iosHelp === "safari-steps";
   return (
-    <div className="pwa-banners" aria-live="polite">
-      {!online && (
-        <div className="banner gold" role="status">Offline · your saved data is safe on this phone. Some things need internet.</div>
-      )}
-      {waiting && (
-        <div className="banner green row space" role="status">
-          <span>New version is ready</span>
-          <button type="button" className="chip" onClick={refresh}>Refresh</button>
-        </div>
-      )}
-      {installEvent && (
-        <div className="card">
-          <b>Install Indoor Khelo</b>
-          <p className="muted small" style={{ margin: "4px 0 10px" }}>Add it to your home screen. It opens full screen and works offline.</p>
-          <div className="two">
-            <button type="button" className="btn gold small" onClick={install}>Install</button>
-            <button type="button" className="btn ghost small" onClick={notNow}>Not now</button>
+    <>
+      <div className="ac-toasts" aria-live="polite">
+        {!online && (
+          <div className="ac-toast" role="status">
+            <span className="ac-tic orange"><AcIcon name="wifioff" size={22} /></span>
+            <span className="ac-tt"><b>You are offline</b><small>Your saved data is safe on this phone. Some things need internet.</small></span>
           </div>
+        )}
+        {waiting && (
+          <div className="ac-toast" role="status">
+            <span className="ac-tic green"><AcIcon name="refresh" size={22} /></span>
+            <span className="ac-tt"><b>New version is ready</b><small>Refresh to update. Your saved data is kept.</small></span>
+            <button type="button" className="ac-btn gold ac-inline" onClick={refresh}>Refresh</button>
+          </div>
+        )}
+        {installEvent && !onWelcome && (
+          <div className="ac-toast stacked" role="region" aria-label="Install Indoor Khelo">
+            <div className="ac-trow">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img className="ac-appicon" src="/icons/icon-192.png" alt="" width={44} height={44} />
+              <span className="ac-tt"><b>Install Indoor Khelo</b><small>Add it to your home screen. It opens full screen and works offline.</small></span>
+            </div>
+            <div className="ac-two">
+              <button type="button" className="ac-btn gold" onClick={install}><AcIcon name="download" size={18} /> Install</button>
+              <button type="button" className="ac-btn" onClick={notNow}>Not now</button>
+            </div>
+          </div>
+        )}
+        {iosHelp === "open-safari" && (
+          <div className="ac-toast stacked" role="region" aria-label="Open this page in Safari to install">
+            <div className="ac-trow">
+              <span className="ac-tic blue"><AcIcon name="link" size={22} /></span>
+              <span className="ac-tt">
+                <b>Open this page in Safari to install</b>
+                <small>On iPhone only Safari can add an app to the home screen. Copy this page&rsquo;s address and open it in Safari.</small>
+              </span>
+            </div>
+            {copied === "manual" && (
+              <input className="ac-addr" readOnly value={typeof window === "undefined" ? "" : window.location.href} aria-label="This page's address" onFocus={(e) => e.currentTarget.select()} />
+            )}
+            <p className="ac-copied" role="status">{copied === "done" ? "Address copied. Open Safari and paste it." : copied === "manual" ? "Select the address above and copy it." : ""}</p>
+            <div className="ac-two">
+              <button type="button" className="ac-btn gold" onClick={copyAddress}><AcIcon name={copied === "done" ? "check" : "copy"} size={18} /> {copied === "done" ? "Copied" : "Copy address"}</button>
+              <button type="button" className="ac-btn" onClick={notNow}>Not now</button>
+            </div>
+          </div>
+        )}
+      </div>
+      {iosSteps && (
+        <div className="ac-bottom" aria-live="polite">
+          <div className="ac-toast stacked ac-steps" role="region" aria-label="Add Indoor Khelo to your iPhone">
+            <b className="ac-st">Add Indoor Khelo to your iPhone</b>
+            <ol>
+              <li><i>1</i><span>Tap the <b>Share</b> button at the bottom of Safari. <em className="ac-key"><AcIcon name="share" size={16} /></em></span></li>
+              <li><i>2</i><span>Scroll and tap <b>Add to Home Screen</b>. <em className="ac-key"><AcIcon name="addsquare" size={16} /></em></span></li>
+              <li><i>3</i><span>Tap <b>Add</b>. Open Indoor Khelo from your home screen.</span></li>
+            </ol>
+            <div><button type="button" className="ac-btn ac-inline" onClick={notNow}>Not now</button></div>
+          </div>
+          <span className="ac-arrow" aria-hidden="true" />
         </div>
       )}
-      {iosHelp === "safari-steps" && (
-        <div className="card">
-          <b>Add Indoor Khelo to your iPhone</b>
-          <ol className="steps">
-            <li><i>1</i><span>Tap the <b>Share</b> button at the bottom of Safari.</span></li>
-            <li><i>2</i><span>Scroll and tap <b>Add to Home Screen</b>.</span></li>
-            <li><i>3</i><span>Tap <b>Add</b>. Open Indoor Khelo from your home screen.</span></li>
-          </ol>
-          <button type="button" className="btn ghost small" style={{ marginTop: 10 }} onClick={notNow}>Not now</button>
-        </div>
-      )}
-      {iosHelp === "open-safari" && (
-        <div className="card">
-          <b>Open this page in Safari to install</b>
-          <p className="muted small" style={{ margin: "4px 0 10px" }}>On iPhone only Safari can add an app to the home screen. Copy this page&rsquo;s address and open it in Safari.</p>
-          <button type="button" className="btn ghost small" onClick={notNow}>Not now</button>
-        </div>
-      )}
-    </div>
+    </>
   );
 }

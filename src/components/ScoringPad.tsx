@@ -5,14 +5,20 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { startTransition, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { lockAction, lockStatus } from "@/app/actions5";
-import CoinToss from "@/components/CoinToss";
-import { LiveScore } from "@/components/Live";
+import "./pp.css";
+import PadBoard from "@/components/PadBoard";
+import PadKeypad from "@/components/PadKeypad";
+import PadMoreMenu from "@/components/PadMore";
+import { PadNotices, PadStatusBar } from "@/components/PadStatus";
+import { IcAlert, IcCard, IcCheck, IcClock, IcHistory, IcRefresh, IcZap } from "@/components/PpIcons";
+import { lastActionText, outNote, overNote, WORDS } from "@/components/padInfo";
+import { StartPanel } from "@/components/PadStart";
 import {
   BatterSheet, BowlerSheet, ByeSheet, CreaseSheet, EditSheet, EndInningsSheet, EndMatchSheet, GuideSheet, LateSheet, LimitSheet, OrderSheet,
-  OutSheet, OversSheet, PenaltySheet, PlayersSheet, RetireSheet, ScorecardSheet, Sheet, SubSheet, TargetSheet, Chip, type Add,
+  OutSheet, OversSheet, PenaltySheet, PlayersSheet, RetireSheet, ScorecardSheet, Sheet, SubSheet, TargetSheet, type Add,
 } from "@/components/PadSheets";
-import { battingSideFor, buildState, currentInnings, describeBall, effectiveEvents, activeInnings } from "@/lib/engine/engine";
-import type { MatchState, PlayerEntry, ScoreEvent, ScoreEventBody, Side, StartPayload } from "@/lib/engine/types";
+import { buildState, currentInnings, describeBall, effectiveEvents, activeInnings } from "@/lib/engine/engine";
+import type { MatchState, ScoreEvent, ScoreEventBody, Side, StartPayload } from "@/lib/engine/types";
 import { deviceId, flushMatch, protectStorage, putOutbox, readMatchCache, readOutbox, removeOutbox, saveMatchCache, type OutboxItem } from "@/lib/outbox";
 
 export type PadProps = {
@@ -29,12 +35,6 @@ export type PadProps = {
 type Sheet_ = null | "out" | "more" | "bye" | "penalty" | "retire" | "bowler" | "changebowler" | "batter" | "late" | "overs" | "players" | "limit" | "crease" | "order" | "sub" | "edit" | "endinnings" | "endmatch" | "target" | "guide" | "scorecard" | "trouble" | "release";
 
 const lastSeq = (list: ScoreEvent[]) => (list.length ? list[list.length - 1]!.seq : 0);
-const WORDS: Record<string, string> = {
-  ball: "the last ball", batter_in: "choosing the batter", bowler: "choosing the bowler", swap_strike: "the strike swap", set_crease: "the batter correction", batting_order: "the batting order",
-  player_added: "adding the player", retire: "the retirement", substitute: "the substitute", overs_change: "the overs change", players_change: "the players change", limit_change: "the limit change",
-  penalty: "the penalty runs", target_manual: "the revised target", innings_end: "ending the innings", super_over_decision: "the super over answer", innings_start: "starting the innings",
-  pause: "the pause", resume: "the resume", edit: "the edit",
-};
 
 export default function ScoringPad(props: PadProps) {
   const { communityId, matchId, serverEvents, start } = props;
@@ -50,7 +50,7 @@ export default function ScoringPad(props: PadProps) {
   const [saveFailed, setSaveFailed] = useState(false);
   const [requester, setRequester] = useState<string | null>(null);
   const [storage, setStorage] = useState<{ persisted: boolean; low: boolean } | null>(null);
-  const [msg, setMsg] = useState<{ tone: "green" | "red" | "mute" | "warn"; text: string; long?: boolean } | null>(null);
+  const [msg, setMsg] = useState<{ tone: "green" | "red" | "mute" | "warn"; text: string; long?: boolean; sub?: string } | null>(null);
   const [armed, setArmed] = useState<null | "wide" | "noball">(null);
   const [outPreset, setOutPreset] = useState<"run_out" | undefined>(undefined);
   const [editBall, setEditBall] = useState<string | undefined>(undefined);
@@ -89,7 +89,7 @@ export default function ScoringPad(props: PadProps) {
       if (r.kind === "offline") { setOnline(false); return; }
       setOnline(true);
       if (r.kind === "signin") { setSignin(true); return; }
-      if (r.kind === "error") { setMsg({ tone: "mute", text: r.message }); return; }
+      if (r.kind === "error") { setMsg({ tone: "mute", text: r.message, sub: "Retrying every few seconds." }); return; }
       if (r.kind === "done") {
         setSignin(false);
         const gone = new Set([...r.accepted, ...r.duplicates]);
@@ -203,7 +203,13 @@ export default function ScoringPad(props: PadProps) {
     const after = buildState(list);
     if (lastBody.type === "ball" && after.ok) {
       const freeHitNext = lastBody.payload.extra === "noball" && after.state.rules.freeHit;
-      setMsg({ tone: freeHitNext ? "warn" : "green", text: freeHitNext ? "No ball: the next ball is a Free Hit." : describeBall(lastBody.payload, after.state.rules) });
+      // read-back for the toast only ("Four runs" and, under it, "Hamza Khan 28 (15)"): reads the state, changes nothing
+      const evId = made[made.length - 1]!.id;
+      const innOf = after.state.innings.find((i) => i.balls.some((b) => b.eventId === evId));
+      const rec = innOf?.balls.find((b) => b.eventId === evId);
+      const line = rec && innOf ? innOf.batters[rec.striker] : undefined;
+      const sub = rec && line ? `${after.state.players[rec.striker]?.name ?? "Batter"} ${line.runs} (${line.balls})` : undefined;
+      setMsg({ tone: freeHitNext ? "warn" : "green", text: freeHitNext ? "No ball: the next ball is a Free Hit." : describeBall(lastBody.payload, after.state.rules), sub });
       if (lastBody.payload.wicket) { setFlash("wicket"); navigator.vibrate?.([30, 40, 30]); }
       else if ((lastBody.payload.runs ?? 0) === 6 && !lastBody.payload.extra) { setFlash("six"); navigator.vibrate?.(25); }
       else navigator.vibrate?.(12);
@@ -247,115 +253,138 @@ export default function ScoringPad(props: PadProps) {
     add([{ type: "ball", payload: { runs: n } }]);
   };
   const toggleArm = (k: "wide" | "noball") => setArmed((a) => (a === k ? null : k));
+  const undo = () => { setArmed(null); add([{ type: "undo", payload: {} }]); };
+  const undoSentence = canUndo ? lastActionText(m, lastEff) : null;
 
-  const statusText = signin
-    ? "Signed out · balls are safe on this phone"
-    : !online ? `Offline${waiting ? ` · ${waiting} ball${waiting === 1 ? "" : "s"} waiting to sync` : ""}`
-    : syncing ? "Syncing…" : waiting ? `${waiting} waiting to sync` : "All saved";
+  // which balls on the board are only on this phone (a clock) or were refused by the server (an alert)
+  const pendingIds = new Set(pending.filter((p) => p.status === "pending").map((p) => p.id));
+  const heldIds = new Set(held.map((p) => p.id));
+  const formMode = !m.started || m.phase === "need_innings";
+  const sides = m.started ? m.sides : start.base.sides;
+  const subtitle = live ? `Over ${Math.floor(live.legalBalls / m.rules.ballsPerOver) + 1} of ${live.maxOvers}` : m.started ? (m.phase === "finished" || m.phase === "abandoned" || m.phase === "result" ? "Match over" : m.phase === "level_prompt" ? "Scores level" : "Between innings") : `${start.base.overs} overs`;
+  // a panel is open over the pad: the message moves to the top so it never covers the panel's buttons
+  const sheetOpen = sheet !== null || (!!live && promptOpen && (needBatter || needBowler));
+  const reportHref = `/c/${communityId}/matches/${matchId}/report`;
+  const dropCount = held.length ? pending.filter((p) => p.seq >= Math.min(...held.map((h) => h.seq))).length : 0;
+  const undoWide = (label: string) => (
+    <div className="pp-undo-wide">
+      <button type="button" className="btn ghost pp-big" onClick={() => add([{ type: "undo", payload: {} }])}><span className="pp-btn-ico" aria-hidden="true"><IcHistory size={18} /></span>{label}</button>
+      {undoSentence && <small className="muted">Takes back: {undoSentence}</small>}
+    </div>
+  );
 
   return (
-    <main className={`pad-page${flash ? ` flash-${flash}` : ""}`}>
-      <header className="pad-top">
-        <Link href={props.matchHref} className="back" aria-label="Leave the scoring screen (it keeps its place)">‹</Link>
-        <div className="grow" style={{ minWidth: 0 }}>
-          <b style={{ display: "block", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{m.started ? `${m.sides[0]} v ${m.sides[1]}` : `${start.base.sides[0]} v ${start.base.sides[1]}`}</b>
-          <small className="muted" role="status" aria-live="polite" style={{ display: "flex", alignItems: "center", gap: 6 }}>
-            <span className="live-dot" aria-hidden="true" style={{ background: !online || signin ? "var(--red)" : waiting ? "var(--gold)" : "var(--green)" }} />
-            <span>{statusText} · {props.scorerName} scoring</span>
-            {waiting > 0 && online && !syncing && <button className="chip" style={{ minHeight: 26, padding: "0 8px", fontSize: "0.72rem" }} onClick={() => void flush()}>Send now</button>}
-          </small>
+    <main className={`pad-page pp-page${flash ? ` flash-${flash}` : ""}`}>
+      <div className="pp-cq">
+      <div className={`pp-frame${formMode ? " form" : ""}`}>
+        <header className="pp-top">
+          <Link href={props.matchHref} className="pp-back" aria-label="Leave the scoring screen (it keeps its place)"><span aria-hidden="true">‹</span></Link>
+          <div className="pp-title">
+            <b>{sides[0]} v {sides[1]}</b>
+            <small className="muted">{subtitle}</small>
+          </div>
+          <button type="button" className="pp-hbtn" disabled={!inn} onClick={() => { setEditBall(undefined); setSheet("edit"); }}><IcHistory size={20} /><span>History</span></button>
+          <button type="button" className="pp-hbtn" onClick={() => setSheet("scorecard")}><IcCard size={20} /><span>Scorecard</span></button>
+          <button type="button" className="pp-hbtn pp-help" aria-label="Open the guide: how to score" onClick={() => setSheet("guide")}><span aria-hidden="true">?</span></button>
+        </header>
+        <PadStatusBar signin={signin} online={online} syncing={syncing} waiting={waiting} failed={saveFailed} scorerName={props.scorerName} onSend={() => void flush()} />
+
+        <div className="pp-scroll">
+          <PadNotices
+            saveFailed={saveFailed} storageLow={!!storage?.low} notPromised={!!storage && !storage.persisted && waiting > 0 && !online} signin={signin}
+            heldCount={held.length} lockLost={lockLost} requester={requester} waiting={waiting} otherDevice={otherDevice}
+            onFix={() => setSheet("trouble")} onSee={() => router.refresh()}
+            onHandOver={async () => { await lockAction(communityId, matchId, "accept", deviceId()); setRequester(null); setLockLost(true); }}
+            onNotNow={async () => { await lockAction(communityId, matchId, "decline", deviceId()); setRequester(null); }}
+            onMove={async () => { await lockAction(communityId, matchId, "take", deviceId()); setOtherDevice(false); router.refresh(); }}
+          />
+          <PadBoard m={m} pendingIds={pendingIds} heldIds={heldIds} pre={{ sides: start.base.sides, overs: start.base.overs, playersPerSide: start.base.playersPerSide }} onBall={live ? (id) => { setEditBall(id); setSheet("edit"); } : undefined} />
         </div>
-        <button className="chip" disabled={!inn} onClick={() => { setEditBall(undefined); setSheet("edit"); }}>History</button>
-        <button className="chip" onClick={() => setSheet("scorecard")}>Scorecard</button>
-      </header>
-      {saveFailed && <div className="banner red" role="alert" style={{ margin: "6px 0" }}>This phone could not keep the last ball in its own storage. Keep this screen open until the balls are sent, and get a signal soon.</div>}
-      {storage?.low && <div className="banner red" role="alert" style={{ margin: "6px 0" }}>This phone is almost out of storage. Unsent balls could be lost. Free some space or get a signal soon.</div>}
-      {storage && !storage.persisted && waiting > 0 && !online && <div className="banner mute" style={{ margin: "6px 0" }}>Balls are saved on this phone, but the browser has not promised to keep them. Reconnect when you can.</div>}
-      {signin && <div className="banner mute" style={{ margin: "6px 0" }}>Your sign-in ran out. Your balls are safe on this phone. <Link href="/" style={{ textDecoration: "underline" }}>Sign in again</Link> and they will be sent.</div>}
-      {held.length > 0 && !lockLost && <button className="banner red" style={{ margin: "6px 0", textAlign: "left" }} onClick={() => setSheet("trouble")}>{held.length} ball{held.length === 1 ? " was" : "s were"} not accepted by the server. Tap to fix.</button>}
-      {lockLost && (
-        <div className="banner red" role="alert" style={{ margin: "6px 0" }}>
-          <b>You are no longer the scorer.</b> Someone else took over, so new balls cannot be added here. {held.length ? `${held.length} ball(s) on this phone were not saved.` : ""}
-          <div className="row" style={{ marginTop: 8 }}><button className="chip" onClick={() => router.refresh()}>See the live score</button>{held.length > 0 && <button className="chip" onClick={() => setSheet("trouble")}>Review unsent balls</button>}</div>
-        </div>
-      )}
-      {requester && !lockLost && (
-        <div className="banner gold" role="alert" style={{ margin: "6px 0" }}>
-          <b>{requester}</b> would like to take over scoring.
-          {waiting > 0 ? <p style={{ margin: "6px 0 0" }}>{waiting} ball{waiting === 1 ? " is" : "s are"} still waiting to sync. Get a signal before handing over.</p> : (
-            <div className="two" style={{ marginTop: 8 }}>
-              <button className="btn small" onClick={async () => { await lockAction(communityId, matchId, "accept", deviceId()); setRequester(null); setLockLost(true); }}>Hand over</button>
-              <button className="btn ghost small" onClick={async () => { await lockAction(communityId, matchId, "decline", deviceId()); setRequester(null); }}>Not now</button>
+
+        <div className="pp-dockw">
+          <div className="pp-dock">
+            {!m.started ? (
+              <StartPanel mode="match" m={m} start={start} add={add} />
+            ) : m.phase === "need_innings" ? (
+              <StartPanel mode="innings" m={m} start={start} add={add} />
+            ) : m.phase === "level_prompt" ? (
+              <div className="pp-panel">
+                <div className="pp-card gold"><b>The scores are level.</b><span>Play a super over?</span></div>
+                <div className="pp-two">
+                  <button type="button" className="btn gold pp-big" onClick={() => add([{ type: "super_over_decision", payload: { play: true } }])}>Yes, play a super over</button>
+                  <button type="button" className="btn ghost pp-big" onClick={() => add([{ type: "super_over_decision", payload: { play: false } }])}>No, call it a tie</button>
+                </div>
+                {canUndo && undoWide("Undo the last ball")}
+              </div>
+            ) : m.phase === "result" ? (
+              <div className="pp-panel">
+                <button type="button" className="btn gold pp-big" onClick={() => add([{ type: "finish", payload: {} }])}>Finish match: {m.result?.text}</button>
+                <p className="pp-card gold"><span>Finishing locks the scorecard. Player of the Match is worked out automatically from points (runs, wickets, catches and the winning side) and shown on the match report.</span></p>
+                {canUndo && undoWide("Undo the last action")}
+              </div>
+            ) : m.phase === "finished" || m.phase === "abandoned" ? (
+              <div className="pp-panel">
+                <div className="pp-card green"><span className="pp-card-ico" aria-hidden="true"><IcCheck size={22} /></span><div><b>{m.result?.text ?? "Match finished"}</b><span>The scorecard is locked. Corrections are made from the match page.</span></div></div>
+                {waiting === 0 ? <Link href={reportHref} className="btn gold pp-big">Open the match report</Link> : <p className="pp-card info"><span>The report opens once every ball has been sent.</span></p>}
+                <Link href={props.matchHref} className="btn ghost pp-big">Back to the match</Link>
+              </div>
+            ) : needBatter && live ? (
+              <div className="pp-panel">
+                <p className="pp-card gold"><span>{outNote(m, live)}</span></p>
+                <button type="button" className="btn gold pp-big" onClick={() => { setHiddenAt(-1); setSheet("batter"); }}>Choose the next batter</button>
+                {canUndo && undoWide("Undo the last ball")}
+              </div>
+            ) : needBowler && live ? (
+              <div className="pp-panel">
+                <p className="pp-card gold"><span>{overNote(m, live)}</span></p>
+                <button type="button" className="btn gold pp-big" onClick={() => { setHiddenAt(-1); setSheet("bowler"); }}>Choose the bowler for over {Math.floor(live.legalBalls / m.rules.ballsPerOver) + 1}</button>
+                {canUndo && undoWide("Undo the last ball")}
+              </div>
+            ) : (
+              <>
+                {m.paused && (
+                  <div className="pp-paused-bar">
+                    <p className="pp-card gold"><span>The match is paused, so the scoring keys are locked until you resume.</span></p>
+                    <button type="button" className="btn gold pp-big" onClick={() => add([{ type: "resume", payload: {} }])}>Match paused. Resume</button>
+                  </div>
+                )}
+                {armed && (
+                  <div className="pp-armed" role="status">
+                    <div className="pp-armed-row">
+                      <span className="grow">{armed === "wide" ? "Wide: now tap the extra runs that were run" : "No Ball: now tap the runs off the bat"}</span>
+                      {armed === "wide" && <button type="button" className="pp-chipbtn" onClick={() => { if (add([{ type: "ball", payload: { extra: "wide", runs: 0 } }])) setArmed(null); }}>Just the wide</button>}
+                      <button type="button" className="pp-chipbtn" onClick={() => setArmed(null)}>Cancel</button>
+                    </div>
+                    <small>
+                      {armed === "wide"
+                        ? `A wide is ${m.rules.wideRuns} run${m.rules.wideRuns === 1 ? "" : "s"} by itself. Tap any extra runs that were run, or Just the wide.`
+                        : `${m.rules.freeHit ? "The next ball will be a Free Hit. " : ""}Tap the runs off the bat. WICKET and RUN OUT are off for now: to record a run out on a no ball, cancel and use RUN OUT (it asks whether it was a no ball).`}
+                    </small>
+                  </div>
+                )}
+                <PadKeypad
+                  blocked={blocked} undoOff={!canUndo || lockLost || otherDevice}
+                  undoNote={lockLost || otherDevice ? "Scoring is not on this phone" : undoSentence ? `Last: ${undoSentence}` : "Nothing to undo yet"}
+                  armed={armed} freeHit={!!live?.freeHit}
+                  onRun={run} onUndo={undo} onArm={toggleArm}
+                  onOut={(preset) => { setOutPreset(preset); setSheet("out"); }}
+                  onMore={() => setSheet("more")}
+                />
+              </>
+            )}
+          </div>
+          {msg && (
+            <div className={`pp-toast ${msg.tone}${sheetOpen ? " top" : ""}`} role="status" aria-live="polite">
+              <span className="pp-toast-ico" aria-hidden="true">{msg.tone === "red" ? <IcAlert size={18} /> : msg.tone === "warn" ? <IcZap size={18} /> : msg.tone === "mute" ? <IcRefresh size={18} /> : <IcCheck size={18} />}</span>
+              <span className="pp-toast-body">
+                {msg.tone === "red" && <b className="pp-toast-h">Not saved</b>}
+                <span className="pp-toast-text">{msg.text}</span>
+                {msg.sub && <small>{msg.sub}</small>}
+              </span>
             </div>
           )}
         </div>
-      )}
-      {otherDevice && (
-        <div className="banner gold" role="alert" style={{ margin: "6px 0" }}>
-          You are scoring this match on another phone. Only one device can score at a time.
-          <div style={{ marginTop: 8 }}><button className="btn small" onClick={async () => { await lockAction(communityId, matchId, "take", deviceId()); setOtherDevice(false); router.refresh(); }}>Move scoring to this phone</button></div>
-        </div>
-      )}
-
-      <div className="pad-info">
-        <LiveScore m={m} onBall={live ? (id) => { setEditBall(id); setSheet("edit"); } : undefined} />
       </div>
-
-      <div className="pad-controls">
-        {!m.started ? (
-          <StartPanel mode="match" m={m} start={start} add={add} />
-        ) : m.phase === "need_innings" ? (
-          <StartPanel mode="innings" m={m} start={start} add={add} />
-        ) : m.phase === "level_prompt" ? (
-          <div className="stack">
-            <div className="banner gold center"><b>The scores are level.</b> Play a super over?</div>
-            <div className="two"><button className="btn gold" onClick={() => add([{ type: "super_over_decision", payload: { play: true } }])}>Yes, super over</button><button className="btn ghost" onClick={() => add([{ type: "super_over_decision", payload: { play: false } }])}>No, it is a tie</button></div>
-            {canUndo && <button className="btn ghost small" onClick={() => add([{ type: "undo", payload: {} }])}>Undo the last ball</button>}
-          </div>
-        ) : m.phase === "result" ? (
-          <div className="stack">
-            <div className="banner green center"><b>{m.result?.text}</b></div>
-            <button className="btn gold" onClick={() => add([{ type: "finish", payload: {} }])}>Finish the match</button>
-            <p className="muted small center" style={{ margin: 0 }}>Finishing locks the scorecard. Player of the Match arrives with the match report.</p>
-            {canUndo && <button className="btn ghost small" onClick={() => add([{ type: "undo", payload: {} }])}>Undo the last action</button>}
-          </div>
-        ) : m.phase === "finished" || m.phase === "abandoned" ? (
-          <div className="stack">
-            <div className="banner green center"><b>{m.result?.text ?? "Match finished"}</b></div>
-            <Link href={props.matchHref} className="btn gold">Back to the match</Link>
-          </div>
-        ) : needBatter && live ? (
-          <div className="stack">
-            <button className="btn gold" onClick={() => { setHiddenAt(-1); setSheet("batter"); }}>Choose the next batter</button>
-            {canUndo && <button className="btn ghost small" onClick={() => add([{ type: "undo", payload: {} }])}>Undo the last ball</button>}
-          </div>
-        ) : needBowler && live ? (
-          <div className="stack">
-            <button className="btn gold" onClick={() => { setHiddenAt(-1); setSheet("bowler"); }}>Choose the bowler for the next over</button>
-            {canUndo && <button className="btn ghost small" onClick={() => add([{ type: "undo", payload: {} }])}>Undo the last ball</button>}
-          </div>
-        ) : (
-          <>
-            {m.paused && <button className="btn gold" style={{ marginBottom: 8 }} onClick={() => add([{ type: "resume", payload: {} }])}>Match paused. Resume</button>}
-            {armed && (
-              <div className="armed-bar" role="status">
-                <span className="grow">{armed === "wide" ? "Wide: now tap the extra runs that were run" : "No Ball: now tap the runs off the bat"}</span>
-                {armed === "wide" && <button className="chip" onClick={() => { if (add([{ type: "ball", payload: { extra: "wide", runs: 0 } }])) setArmed(null); }}>Just the wide</button>}
-                <button className="chip" onClick={() => setArmed(null)}>Cancel</button>
-              </div>
-            )}
-            <div className="pad-grid" aria-label="Scoring pad">
-              {[0, 1, 2, 3].map((n) => <button key={n} className="pbtn" disabled={blocked} onClick={() => run(n)}>{n}</button>)}
-              {[4, 5, 6].map((n) => <button key={n} className={`pbtn${n !== 5 ? " blue" : ""}`} disabled={blocked} onClick={() => run(n)}>{n}</button>)}
-              <button className="pbtn undo" disabled={!canUndo || lockLost || otherDevice} onClick={() => { setArmed(null); add([{ type: "undo", payload: {} }]); }}>UNDO</button>
-              <button className={`pbtn x${armed === "wide" ? " armed" : ""}`} disabled={blocked} aria-pressed={armed === "wide"} onClick={() => toggleArm("wide")}>WIDE</button>
-              <button className={`pbtn x${armed === "noball" ? " armed" : ""}`} disabled={blocked} aria-pressed={armed === "noball"} onClick={() => toggleArm("noball")}>NO BALL</button>
-              <button className="pbtn w" disabled={blocked || !!armed} onClick={() => { setOutPreset(undefined); setSheet("out"); }}>WICKET{live?.freeHit && <small>Run Out only</small>}</button>
-              <button className="pbtn w" disabled={blocked || !!armed} onClick={() => { setOutPreset("run_out"); setSheet("out"); }}>RUN OUT</button>
-              <button className="pbtn more" onClick={() => setSheet("more")}>More <span aria-hidden="true">↑</span></button>
-            </div>
-          </>
-        )}
       </div>
 
       {/* prompts that appear by themselves */}
@@ -384,157 +413,48 @@ export default function ScoringPad(props: PadProps) {
       {sheet === "guide" && <GuideSheet close={() => { try { localStorage.setItem("ik_guide_done", "1"); } catch { /* ignore */ } close(); }} />}
       {sheet === "trouble" && (
         <Sheet title="Balls the server did not accept" onClose={close}>
-          <p className="muted small" style={{ margin: "0 0 8px" }}>These balls are still safe on this phone. Nothing is thrown away until you choose to.</p>
-          <ul style={{ paddingLeft: 18, lineHeight: 1.6 }}>
-            {held.map((h) => <li key={h.id}><b>{h.event.type === "ball" ? describeBall(h.event.payload, m.rules) : h.event.type.replace("_", " ")}</b><br /><small className="muted">{h.reason}</small></li>)}
+          <p className="muted small" style={{ margin: "0 0 4px" }}>These balls are still safe on this phone. Nothing is thrown away until you choose to.</p>
+          <p className="muted small" style={{ margin: "0 0 10px" }}>Balls are sent in order, so every ball after a refused one is held too.</p>
+          <ul className="pp-held">
+            {held.map((h) => (
+              <li key={h.id}>
+                <span className="pp-held-ico" aria-hidden="true"><IcAlert size={18} /></span>
+                <div><b>{h.event.type === "ball" ? describeBall(h.event.payload, m.rules) : h.event.type.replace("_", " ")}</b><small className="muted">{h.reason}</small></div>
+              </li>
+            ))}
           </ul>
           <div className="stack" style={{ marginTop: 12 }}>
-            <button className="btn ghost" onClick={() => { commit(store.current.confirmed, store.current.pending.map((p) => (p.status !== "pending" ? { ...p, status: "pending", reason: null } : p))); void Promise.all(held.map((h) => putOutbox({ ...h, status: "pending", reason: null }))).then(flush); close(); }}>Try sending them again</button>
-            <button className="btn red" onClick={async () => {
+            <button type="button" className="btn gold pp-big" onClick={() => { commit(store.current.confirmed, store.current.pending.map((p) => (p.status !== "pending" ? { ...p, status: "pending", reason: null } : p))); void Promise.all(held.map((h) => putOutbox({ ...h, status: "pending", reason: null }))).then(flush); close(); }}>Try sending them again</button>
+            <p className="pp-warn small" style={{ margin: 0 }}>Discarding cannot be undone. The balls are removed from this phone.</p>
+            <button type="button" className="btn red pp-big" onClick={async () => {
               const from = Math.min(...held.map((h) => h.seq));
               const drop = store.current.pending.filter((p) => p.seq >= from);
               await removeOutbox(drop.map((p) => p.id));
               commit(store.current.confirmed, store.current.pending.filter((p) => p.seq < from));
               close();
               startTransition(() => router.refresh());
-            }}>Discard these balls (and any after them)</button>
+            }}>Discard {dropCount} ball{dropCount === 1 ? "" : "s"}</button>
           </div>
         </Sheet>
       )}
       {sheet === "release" && (
         <Sheet title="Stop scoring?" onClose={close}>
-          {waiting > 0 ? <p className="err">{waiting} ball{waiting === 1 ? " is" : "s are"} still waiting to sync. Get a signal first, so nothing is lost.</p> : <p style={{ margin: "0 0 12px" }}>Someone else can then take over scoring. The score so far is saved.</p>}
-          <button className="btn gold" disabled={waiting > 0} onClick={async () => { await lockAction(communityId, matchId, "release", deviceId()); router.push(props.matchHref); router.refresh(); }}>Yes, stop scoring</button>
+          {waiting > 0
+            ? <div className="pp-note info" role="alert"><span className="pp-note-ico"><IcClock /></span><div><b>Saved only on this phone.</b> {waiting} ball{waiting === 1 ? " is" : "s are"} still waiting to sync. Get a signal first, so nothing is lost.</div></div>
+            : <div className="pp-note ok"><span className="pp-note-ico"><IcCheck /></span><div><b>All changes are saved.</b> Someone else can then take over scoring. The score so far is saved.</div></div>}
+          <button type="button" className="btn gold pp-big" style={{ marginTop: 12 }} disabled={waiting > 0} onClick={async () => { await lockAction(communityId, matchId, "release", deviceId()); router.push(props.matchHref); router.refresh(); }}>Stop scoring and hand over</button>
         </Sheet>
       )}
-      {msg && <div className={`toast${msg.tone === "red" ? " error" : msg.tone === "warn" ? " warn" : ""}`} role="status" aria-live="polite">{msg.text}</div>}
       {sheet === "more" && (
         <Sheet title="More" onClose={close}>
-          <div className="more-grid">
-            {([
-              ["bye", "Byes and leg-byes", !live || blocked], ["penalty", "Penalty runs", !live],
-              ["changebowler", "Change bowler", !live || needBatter], ["retire", "Retire a player", !live],
-              ["late", "Add a late player or guest", !inn],
-              ["overs", "Change overs", !live], ["players", "Players per side", !inn],
-              ["limit", "Change bowler limit", !inn], ["crease", "Correct batters", !live],
-              ["order", "Batting order", !live], ["sub", "Substitute fielder", !inn],
-              ["edit", "Edit an earlier ball", !inn], ["target", "Revised target", !live || (live.target === null)],
-              ["endinnings", "End the innings", !live],
-            ] as [Sheet_, string, boolean][]).map(([k, t, off], i) => (
-              <button key={i} className="btn ghost small" style={{ width: "100%" }} disabled={off} onClick={() => setSheet(k)}>{t}</button>
-            ))}
-            <button className="btn ghost small" style={{ width: "100%" }} disabled={!inn} onClick={() => { close(); if (m.paused) add([{ type: "resume", payload: {} }]); else add([{ type: "pause", payload: {} }]); }}>{m.paused ? "Resume the match" : "Pause the match"}</button>
-          </div>
-          <div className="two" style={{ marginTop: 10 }}>
-            <button className="btn ghost small" style={{ width: "100%" }} disabled={!live || !live.nonStriker} onClick={() => { close(); add([{ type: "swap_strike", payload: {} }]); }}>Swap striker and non-striker</button>
-            <button className="btn ghost small" style={{ width: "100%" }} onClick={() => setSheet("guide")}>How to score</button>
-          </div>
-          <hr className="line" />
-          <div className="two">
-            <button className="btn red small" style={{ width: "100%" }} disabled={!inn} onClick={() => setSheet("endmatch")}>End or abandon the match</button>
-            <button className="btn ghost small" style={{ width: "100%" }} onClick={() => setSheet("release")}>Stop scoring (hand over)</button>
-          </div>
+          <PadMoreMenu
+            m={m} inn={inn} live={live} lock={lockLost || otherDevice}
+            onOpen={(k) => setSheet(k as Sheet_)}
+            onPause={() => { close(); if (m.paused) add([{ type: "resume", payload: {} }]); else add([{ type: "pause", payload: {} }]); }}
+            onSwap={() => { close(); add([{ type: "swap_strike", payload: {} }]); }}
+          />
         </Sheet>
       )}
     </main>
-  );
-}
-
-/* ---------- starting the match, and each later innings ---------- */
-function StartPanel({ mode, m, start, add }: { mode: "match" | "innings"; m: MatchState; start: PadProps["start"]; add: Add }) {
-  const [winner, setWinner] = useState<"" | "1" | "2">(start.toss ? String(start.toss.winner) as "1" | "2" : "");
-  const [decision, setDecision] = useState<"" | "bat" | "bowl">(start.toss?.decision ?? "");
-  const [first, setFirst] = useState<"" | "1" | "2">(start.battingFirst ? String(start.battingFirst) as "1" | "2" : "");
-  const [striker, setStriker] = useState("");
-  const [non, setNon] = useState("");
-  const [bowler, setBowler] = useState("");
-  const [err, setErr] = useState<string | null>(null);
-  const [tossMode, setTossMode] = useState<"coin" | "manual" | "done">(start.toss ? "done" : "coin");
-
-  const players: PlayerEntry[] = mode === "match" ? start.base.players : Object.values(m.players).filter((p) => !m.gone[p.id]);
-  const sides = mode === "match" ? start.base.sides : m.sides;
-  const tossBat: Side | null = winner && decision ? (decision === "bat" ? (Number(winner) as Side) : ((winner === "1" ? 2 : 1) as Side)) : null;
-  const battingSide: Side | null = mode === "match" ? (tossBat ?? (first ? (Number(first) as Side) : null)) : battingSideFor(m, m.nextInnings);
-  const bowlingSide: Side | null = battingSide ? ((battingSide === 1 ? 2 : 1) as Side) : null;
-  const batList = battingSide ? players.filter((p) => p.side === battingSide) : [];
-  const bowlList = bowlingSide ? players.filter((p) => p.side === bowlingSide) : [];
-  const idx = m.nextInnings;
-  const title = mode === "match" ? "Start the match" : idx >= 2 ? "Start the super over" : `Start innings ${idx + 1}`;
-  const chase = mode === "innings" && idx >= 1 ? (m.innings[idx - 1] ? m.innings[idx - 1]!.runs + 1 : null) : null;
-
-  const submit = () => {
-    setErr(null);
-    if (!battingSide) return setErr("Choose who bats first (from the toss, or directly).");
-    if (!striker || !non || !bowler) return setErr("Choose the striker, the non-striker and the opening bowler.");
-    const inningsBody: ScoreEventBody = { type: "innings_start", payload: { striker, nonStriker: non, bowler } };
-    if (mode === "match") {
-      const toss = winner && decision ? { winner: Number(winner) as Side, decision } : null;
-      const ok = add([{ type: "match_start", payload: { ...start.base, toss, battingFirst: battingSide } }, inningsBody]);
-      if (!ok) return;
-    } else if (!add([inningsBody])) return;
-  };
-
-  return (
-    <div className="stack">
-      <h2 style={{ fontSize: "1.05rem" }}>{title}</h2>
-      {mode === "match" && (
-        <>
-          <p className="muted small" style={{ margin: 0 }}>{sides[0]} v {sides[1]} · {start.base.overs} overs · {start.base.playersPerSide} a side · {start.base.players.filter((p) => p.side === 1).length} and {start.base.players.filter((p) => p.side === 2).length} players picked. You are the scorer.</p>
-          {tossMode === "coin" && (
-            <>
-              <CoinToss sides={start.base.sides} onDone={(r) => { setWinner(String(r.winner) as "1" | "2"); setDecision(r.decision); setStriker(""); setNon(""); setBowler(""); }} />
-              <button type="button" className="chip" style={{ alignSelf: "flex-start" }} onClick={() => { setWinner(""); setDecision(""); setTossMode("manual"); }}>The toss was already done: enter the result by hand</button>
-            </>
-          )}
-          {tossMode === "done" && (
-            <div className="banner green"><b>{sides[Number(winner) - 1]} won the toss</b> and chose to {decision}. <button type="button" className="chip" style={{ marginLeft: 6 }} onClick={() => { setWinner(""); setDecision(""); setTossMode("coin"); }}>Toss again</button></div>
-          )}
-          {tossMode === "manual" && (
-            <>
-              <div className="two">
-                <div>
-                  <label className="lb" htmlFor="st-w" style={{ marginTop: 0 }}>Toss won by</label>
-                  <select id="st-w" className="field" value={winner} onChange={(e) => setWinner(e.target.value as "" | "1" | "2")}><option value="">Not recorded</option><option value="1">{sides[0]}</option><option value="2">{sides[1]}</option></select>
-                </div>
-                <div>
-                  <label className="lb" htmlFor="st-d" style={{ marginTop: 0 }}>Chose to</label>
-                  <select id="st-d" className="field" value={decision} onChange={(e) => setDecision(e.target.value as "" | "bat" | "bowl")}><option value="">Not recorded</option><option value="bat">Bat</option><option value="bowl">Bowl</option></select>
-                </div>
-              </div>
-              <button type="button" className="chip" style={{ alignSelf: "flex-start" }} onClick={() => { setWinner(""); setDecision(""); setTossMode("coin"); }}>Use the coin instead</button>
-            </>
-          )}
-          {winner && !decision && <p className="err">Choose what the toss winner decided.</p>}
-          {!tossBat && (
-            <>
-              <label className="lb" htmlFor="st-f">Batting first</label>
-              <select id="st-f" className="field" value={first} onChange={(e) => { setFirst(e.target.value as "" | "1" | "2"); setStriker(""); setNon(""); setBowler(""); }}><option value="">Choose</option><option value="1">{sides[0]}</option><option value="2">{sides[1]}</option></select>
-            </>
-          )}
-        </>
-      )}
-      {mode === "innings" && battingSide && (
-        <div className="banner mute">{sides[battingSide - 1]} bat{chase ? `. Target ${chase} from ${idx >= 2 ? 1 : m.overs} over${(idx >= 2 ? 1 : m.overs) === 1 ? "" : "s"}` : ""}.</div>
-      )}
-      {battingSide && (
-        <>
-          <b style={{ display: "block" }}>Striker (faces the first ball)</b>
-          <div className="chips" role="group" aria-label="Striker">
-            {batList.map((p) => <Chip key={p.id} on={striker === p.id} bad={striker === p.id && non === p.id} onClick={() => setStriker(p.id)}>{p.name}{p.number !== null ? ` (${p.number})` : ""}</Chip>)}
-          </div>
-          <b style={{ display: "block" }}>Non-striker</b>
-          <div className="chips" role="group" aria-label="Non-striker">
-            {batList.map((p) => <Chip key={p.id} on={non === p.id} bad={non === p.id && striker === p.id} onClick={() => setNon(p.id)}>{p.name}{p.number !== null ? ` (${p.number})` : ""}</Chip>)}
-          </div>
-          {striker && striker === non && <p className="err" role="alert">Striker and non-striker must be different players.</p>}
-          <b style={{ display: "block" }}>First bowler ({sides[(bowlingSide ?? 2) - 1]})</b>
-          <div className="chips" role="group" aria-label="First bowler">
-            {bowlList.map((p) => <Chip key={p.id} on={bowler === p.id} onClick={() => setBowler(p.id)}>{p.name}{p.number !== null ? ` (${p.number})` : ""}</Chip>)}
-          </div>
-        </>
-      )}
-      {err && <p className="err" role="alert">{err}</p>}
-      <button className="btn gold" disabled={!battingSide || !striker || !non || !bowler || striker === non} onClick={submit}>{mode === "match" ? "Start scoring" : "Start the innings"}</button>
-    </div>
   );
 }

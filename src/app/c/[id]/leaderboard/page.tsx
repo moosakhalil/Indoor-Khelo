@@ -1,9 +1,10 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import Frame from "@/components/Frame";
-import Shirt from "@/components/Shirt";
-import { GROUPS, STATS, buildBoard, careerOf, fmt, ordinal, type Career } from "@/lib/career";
+import { BoardList, FilterSheet, type BoardItem } from "@/components/LeaderboardClient";
+import { ActiveFilters, GroupTabs, OrderChip, Podium, RankCardView, RuleNote, StatChips } from "@/components/LeaderboardParts";
+import { GROUPS, STATS, buildBoard, careerOf, fmt, type Career } from "@/lib/career";
 import { listApprovedMembers, requireMember } from "@/lib/community";
+import { personLine, podiumOf, rangeLabel, rankCard } from "@/lib/ldView";
 import { communityCareers } from "@/lib/reports";
 import { requireAcceptedUser } from "@/lib/session";
 import { listSeries } from "@/lib/seriesDb";
@@ -35,70 +36,46 @@ export default async function LeaderboardPage({ params, searchParams }: { params
   const rows = buildBoard(members.map((m) => ({ userId: m.user_id, name: m.name, number: m.player_number, career: (careers.get(m.user_id) ?? empty) as Career })), def, flip);
   const ranked = rows.filter((r) => r.ranked);
   const mine = rows.find((r) => r.userId === user.id);
-  const keep = new URLSearchParams();
-  if (teamId) keep.set("team", teamId);
-  if (seriesId) keep.set("series", seriesId);
-  if (from) keep.set("from", from);
-  if (to) keep.set("to", to);
-  const extra = keep.toString() ? `&${keep.toString()}` : "";
   const noData = careers.size === 0;
+  const filters = { team: teamId, series: seriesId, from, to };
+  const valueOf = (r: { value: number | null }) => fmt(r.value, def);
+  const roleOf = new Map(members.map((m) => [m.user_id, m.playing_role] as const));
+  const items: BoardItem[] = rows.map((r) => ({
+    userId: r.userId, name: r.name, number: r.number, line: personLine(r.number, roleOf.get(r.userId)), rank: r.rank, tied: r.tied, ranked: r.ranked, note: r.note, valueText: r.ranked ? valueOf(r) : "–",
+  }));
+  const card = rankCard(mine, ranked.length, def, mine ? valueOf(mine) : "–", (careers.get(user.id) ?? empty) as Career, !noData);
+  const podium = podiumOf(rows, def, !noData);
+  const seriesName = seriesId ? allSeries.find((x) => x.id === seriesId)?.name ?? null : null;
+  const teamName = teamId ? teams.find((t) => t.id === teamId)?.name ?? null : null;
+  const rangeText = from || to ? rangeLabel(from, to) : null;
 
   return (
     <Frame communityId={id} title="Leaderboard" back={`/c/${id}/teams`}>
-      <div className="stack">
-        <nav className="row wrap" aria-label="Group">
-          {GROUPS.map((g) => <Link key={g.key} href={`/c/${id}/leaderboard?group=${g.key}${extra}`} className={`chip${group === g.key ? " gold" : ""}`}>{g.label}</Link>)}
-        </nav>
-        <nav className="row wrap" aria-label="Statistic">
-          {STATS.filter((s) => s.group === group).map((s) => <Link key={s.key} href={`/c/${id}/leaderboard?stat=${s.key}${extra}`} className={`chip${def.key === s.key ? " gold" : ""}`}>{s.label}</Link>)}
-        </nav>
+      <div className="stack ld-page">
+        <GroupTabs communityId={id} group={group} filters={filters} />
+        <StatChips communityId={id} group={group} def={def} filters={filters} />
+        <div className="ld-controls">
+          <FilterSheet communityId={id} stat={def.key} flip={flip} series={allSeries.map((x) => ({ id: x.id, name: x.name }))} teams={teams.map((t) => ({ id: t.id, name: t.name }))} current={filters} />
+          <OrderChip communityId={id} def={def} flip={flip} filters={filters} />
+        </div>
+        <ActiveFilters communityId={id} def={def} flip={flip} filters={filters} seriesName={seriesName} teamName={teamName} rangeText={rangeText} />
 
-        <section className="card">
+        <RankCardView card={card} def={def} number={mine?.number ?? null} name={mine?.name ?? ""} />
+        <Podium rows={podium} def={def} valueOf={valueOf} communityId={id} />
+        <RuleNote def={def} />
+        {noData && (
+          <div className="ld-note" role="note">
+            <span>No finished matches yet. Everyone is listed, and the numbers fill in after the first match.</span>
+          </div>
+        )}
+
+        <section className="card ld-board" aria-label={`${def.label} leaderboard`}>
           <div className="row space">
-            <b>{def.label}</b>
-            <Link href={`/c/${id}/leaderboard?stat=${def.key}${flip ? "" : "&flip=1"}${extra}`} className="chip">{flip ? "Order: reversed" : (def.lowerIsBetter ? "Order: lowest first" : "Order: highest first")} · flip</Link>
+            <b>{def.label} leaderboard</b>
+            {!noData && <span className="muted small">{ranked.length} ranked of {rows.length}</span>}
           </div>
-          {mine && (
-            <p style={{ margin: "8px 0 0" }}>
-              {mine.ranked ? <>You are <b>{ordinal(mine.rank!)}</b> of <b>{ranked.length}</b>{mine.tied ? " (tied)" : ""}.</> : <span className="muted">You are not ranked yet. {mine.note}.</span>}
-            </p>
-          )}
-          {def.rule && <p className="muted small" style={{ margin: "6px 0 0" }}>{def.rule}. Members below it are listed last in grey.</p>}
-          {noData && <p className="muted small" style={{ margin: "6px 0 0" }}>No finished matches yet. Everyone is listed, and the numbers fill in after the first match.</p>}
-          <table className="board" aria-label={`${def.label} leaderboard`}>
-            <tbody>
-              {rows.map((r) => (
-                <tr key={r.userId} className={`${r.userId === user.id ? "me" : ""}${r.ranked ? "" : " dim"}`}>
-                  <td style={{ width: 46 }}><b>{r.rank !== null ? `${r.rank}${r.tied ? "=" : ""}` : "–"}</b></td>
-                  <td style={{ width: 44 }}><Shirt number={r.number} size="small" /></td>
-                  <td><Link href={`/c/${id}/players/${r.userId}`}><b>{r.name}</b>{r.userId === user.id ? " (you)" : ""}</Link>{r.note && <small className="muted" style={{ display: "block" }}>{r.note}</small>}</td>
-                  <td style={{ textAlign: "right" }}><b>{fmt(r.value, def)}</b></td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+          <BoardList communityId={id} rows={items} meId={user.id} hasData={!noData} label={`${def.label} leaderboard`} />
         </section>
-
-        <form method="get" className="card" aria-label="Filter the leaderboard">
-          <input type="hidden" name="stat" value={def.key} />
-          <b>Filters</b>
-          {allSeries.length > 0 && (
-            <>
-              <label className="lb" htmlFor="l-series">Series</label>
-              <select id="l-series" name="series" className="field" defaultValue={seriesId ?? ""}><option value="">All matches</option>{allSeries.map((x) => <option key={x.id} value={x.id}>{x.name}</option>)}</select>
-            </>
-          )}
-          <label className="lb" htmlFor="l-team">Team</label>
-          <select id="l-team" name="team" className="field" defaultValue={teamId ?? ""}><option value="">Any team</option>{teams.map((t) => <option key={t.id} value={t.id}>{t.name}</option>)}</select>
-          <div className="two">
-            <div><label className="lb" htmlFor="l-from">From</label><input id="l-from" type="date" name="from" className="field" defaultValue={from ?? ""} /></div>
-            <div><label className="lb" htmlFor="l-to">To</label><input id="l-to" type="date" name="to" className="field" defaultValue={to ?? ""} /></div>
-          </div>
-          <div className="two" style={{ marginTop: 10 }}>
-            <button className="btn gold small" style={{ width: "100%" }}>Apply</button>
-            {(teamId || seriesId || from || to) && <Link href={`/c/${id}/leaderboard?stat=${def.key}`} className="btn ghost small" style={{ width: "100%" }}>Clear filters</Link>}
-          </div>
-        </form>
       </div>
     </Frame>
   );

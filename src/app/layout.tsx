@@ -1,9 +1,12 @@
 import type { Metadata, Viewport } from "next";
-import { Plus_Jakarta_Sans } from "next/font/google";
+import { Barlow_Semi_Condensed, Plus_Jakarta_Sans } from "next/font/google";
 import "./globals.css";
 import PwaShell from "@/components/PwaShell";
+import { SnackbarProvider } from "@/components/Snackbar";
 
 const jakarta = Plus_Jakarta_Sans({ subsets: ["latin"], weight: ["400", "500", "600", "700", "800"], variable: "--font-jakarta", display: "swap" });
+// The condensed font used for scores and big numbers (decided 2026-11-24).
+const barlow = Barlow_Semi_Condensed({ subsets: ["latin"], weight: ["500", "600", "700"], variable: "--font-score", display: "swap" });
 
 export const metadata: Metadata = {
   title: { default: "Indoor Khelo", template: "%s · Indoor Khelo" },
@@ -32,10 +35,10 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className={jakarta.variable}>
+    <html lang="en" className={`${jakarta.variable} ${barlow.variable}`}>
       <body>
         <PwaShell />
-        {children}
+        <SnackbarProvider>{children}</SnackbarProvider>
       </body>
     </html>
   );

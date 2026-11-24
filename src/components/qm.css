@@ -1,0 +1,157 @@
+/* Phase C (UI redesign), Builder C4: the two "no signal" screens (new match setup, and the states around the scoring pad). qm- = quick match.
+   Flat colour only. Nothing here loads anything from the network (no fonts, no images). */
+
+/* ---------- top bar chip and shell ---------- */
+.qm-status { flex: 0 0 auto; display: inline-flex; align-items: center; gap: 6px; min-height: 28px; padding: 0 10px; border-radius: 999px; background: rgba(90, 169, 255, 0.14); border: 1px solid var(--blue); color: #9fcdff; font-size: 0.75rem; font-weight: 800; white-space: nowrap; }
+.qm-status.warn { background: rgba(245, 200, 75, 0.14); border-color: var(--gold); color: var(--gold); }
+@media (min-width: 1280px) { .app.has-nav.qm-app > .page { flex-basis: 1060px; } }
+
+/* ---------- layout: one column; the summary moves to the right on a wide screen ---------- */
+.qm-layout { display: flex; flex-direction: column; gap: 12px; min-width: 0; }
+.qm-main { display: flex; flex-direction: column; gap: 12px; min-width: 0; }
+.qm-sum { display: flex; flex-direction: column; gap: 10px; }
+.qm-sum-card { display: none; }
+@media (min-width: 640px) {
+  .qm-sum-card { display: flex; flex-direction: column; gap: 8px; padding: 14px; border-radius: var(--radius); background: var(--card); border: 1px solid var(--line); }
+}
+@media (min-width: 1280px) {
+  .qm-layout { display: grid; grid-template-columns: minmax(0, 1fr) 320px; gap: 20px; align-items: start; }
+  .qm-sum { position: sticky; top: 72px; }
+}
+.qm-sum-h { font-size: 0.72rem; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; color: var(--mute); }
+.qm-sum-vs { display: flex; align-items: center; gap: 10px; color: var(--mute); font-weight: 800; }
+.qm-sum-names { overflow-wrap: anywhere; }
+.qm-startnote { margin: 0; text-align: center; }
+
+/* ---------- notes: blue = calm (offline is not an error), gold = look at this, red = problem ---------- */
+.qm-note, .qm-alert, .qm-stale { display: flex; align-items: flex-start; gap: 10px; padding: 12px 14px; border-radius: 14px; line-height: 1.4; }
+.qm-note p, .qm-alert p, .qm-stale p { margin: 2px 0 0; font-size: 0.88rem; font-weight: 500; }
+.qm-note-ico { flex: 0 0 auto; margin-top: 1px; display: inline-flex; }
+.qm-note { background: rgba(90, 169, 255, 0.12); border: 1px solid var(--blue); color: #cfe6ff; }
+.qm-note.ok { background: rgba(47, 191, 113, 0.12); border-color: var(--green); color: #b5efcf; }
+.qm-alert { background: rgba(229, 72, 77, 0.14); border: 1px solid var(--red); color: #ffb3b6; }
+.qm-alert-h { font-weight: 800; color: #ffd0d2; }
+.qm-stale { background: rgba(245, 200, 75, 0.12); border: 1px solid var(--gold); color: #ffe39a; }
+.qm-wait { font-weight: 700 !important; }
+
+/* ---------- sections ---------- */
+.qm-sec { background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); padding: 14px; }
+.qm-sec h2 { display: flex; align-items: center; gap: 10px; font-size: 1.02rem; margin: 0 0 4px; }
+.qm-sec h2 i { font-style: normal; flex: 0 0 auto; width: 26px; height: 26px; border-radius: 50%; background: var(--gold); color: var(--night); font-size: 0.85rem; font-weight: 800; display: inline-flex; align-items: center; justify-content: center; }
+.qm-hint { margin: 10px 0 0; }
+.qm-ico { flex: 0 0 auto; display: inline-flex; align-items: center; }
+
+/* ---------- errors ---------- */
+.qm-err { display: flex; align-items: flex-start; gap: 6px; margin: 6px 0 0; color: #ff9a9e; font-size: 0.85rem; font-weight: 600; }
+.qm-err svg { flex: 0 0 auto; margin-top: 2px; }
+
+/* ---------- name boxes (team names, guest) with badge and counter ---------- */
+.qm-namebox { display: flex; align-items: center; gap: 10px; min-height: 52px; padding: 4px 12px 4px 8px; border-radius: 14px; background: var(--card2); border: 1.5px solid var(--line); }
+.qm-namebox:focus-within { border-color: var(--gold); outline: 2px solid var(--gold); outline-offset: 2px; }
+.qm-namebox.bad { border-color: var(--red); box-shadow: 0 0 0 2px rgba(229, 72, 77, 0.25); }
+.qm-bare { flex: 1; min-width: 0; min-height: 44px; background: transparent; border: 0; padding: 0; color: var(--white); font: inherit; }
+.qm-bare:focus { outline: 0; }
+.qm-bare::placeholder { color: var(--mute); }
+.qm-count { flex: 0 0 auto; font-size: 0.78rem; font-weight: 700; color: var(--mute); }
+.qm-count.bad { color: #ff9a9e; }
+
+/* ---------- format: overs round buttons, players stepper ---------- */
+.qm-overs { display: flex; flex-wrap: wrap; gap: 8px; }
+.qm-round { min-width: 44px; min-height: 44px; padding: 0 6px; border-radius: 999px; border: 1.5px solid var(--line); background: var(--card2); font-weight: 800; font-size: 0.95rem; display: inline-flex; align-items: center; justify-content: center; }
+.qm-round.wide { padding: 0 16px; }
+.qm-round[aria-pressed="true"] { background: var(--gold); border-color: var(--gold); color: var(--night); }
+.qm-custom { margin-top: 10px; }
+.qm-step { display: flex; align-items: center; gap: 10px; }
+.qm-stepbtn { width: 48px; height: 48px; border-radius: 14px; background: var(--card2); border: 1.5px solid var(--line); font-size: 1.5rem; font-weight: 700; line-height: 1; display: inline-flex; align-items: center; justify-content: center; }
+.qm-stepbtn:disabled { opacity: 0.4; cursor: not-allowed; }
+.qm-stepin { width: 72px; text-align: center; font-size: 1.4rem; font-weight: 800; padding-left: 4px; padding-right: 4px; min-height: 48px; }
+
+/* ---------- team meters ---------- */
+.qm-meters { display: flex; flex-direction: column; gap: 10px; margin-top: 8px; }
+.qm-meter { display: flex; flex-direction: column; gap: 6px; }
+.qm-meter-top { display: flex; align-items: center; gap: 10px; }
+.qm-meter-name { flex: 1; min-width: 0; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; line-clamp: 2; overflow: hidden; overflow-wrap: anywhere; }
+.qm-meter-n { font-weight: 800; font-variant-numeric: tabular-nums; }
+.qm-meter-bar { height: 8px; border-radius: 999px; background: var(--card2); overflow: hidden; }
+.qm-meter-bar i { display: block; height: 100%; border-radius: 999px; background: var(--blue); transition: width 0.2s ease; }
+.qm-meter.full .qm-meter-bar i { background: var(--green); }
+.qm-meter.full .qm-meter-n { color: #4be38a; }
+.qm-meter.over .qm-meter-bar i { background: var(--red); }
+.qm-meter.over .qm-meter-n { color: #ff9a9e; }
+.qm-meter.compact .qm-meter-top .team-badge { width: 28px; height: 28px; font-size: 0.7rem; }
+.qm-tag { display: inline-flex; align-items: center; gap: 4px; font-size: 0.72rem; font-weight: 800; padding: 2px 8px; border-radius: 999px; }
+.qm-tag.ok { background: rgba(47, 191, 113, 0.16); color: #4be38a; }
+.qm-tag.bad { background: rgba(229, 72, 77, 0.16); color: #ff9a9e; }
+
+/* ---------- squads, search ---------- */
+.qm-squads { display: flex; flex-direction: column; gap: 8px; margin-top: 12px; }
+.qm-squads-h { display: inline-flex; align-items: center; gap: 6px; font-size: 0.85rem; font-weight: 700; color: var(--mute); }
+.qm-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.qm-chip { min-height: 44px; padding: 0 14px; border-radius: 999px; border: 1.5px solid var(--line); background: var(--card2); font-weight: 700; font-size: 0.88rem; display: inline-flex; align-items: center; }
+.qm-chip[aria-pressed="true"] { border-color: var(--gold); background: rgba(245, 200, 75, 0.14); color: var(--gold); }
+.qm-choose { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding: 10px; border-radius: 12px; background: var(--s0); border: 1px dashed var(--line); }
+.qm-squadmsg { margin: 0; }
+.qm-find { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-top: 12px; }
+.qm-search { position: relative; flex: 1; min-width: 160px; display: flex; align-items: center; }
+.qm-search svg { position: absolute; left: 14px; color: var(--mute); pointer-events: none; }
+.qm-search .field { padding-left: 42px; }
+
+/* ---------- players: shirt and name on top, Out / team 1 / team 2 underneath ---------- */
+.qm-players { list-style: none; margin: 12px 0 0; padding: 0; display: flex; flex-direction: column; border: 1px solid var(--line); border-radius: 14px; background: var(--s0); }
+.qm-player { padding: 10px; border-top: 1px solid var(--line); display: flex; flex-direction: column; gap: 8px; }
+.qm-player:first-child { border-top: 0; }
+.qm-player-top { display: flex; align-items: center; gap: 10px; min-width: 0; }
+.qm-player-top .t { display: flex; flex-direction: column; min-width: 0; }
+.qm-player-top .t b { overflow-wrap: anywhere; }
+.qm-player-top .t small { font-size: 0.78rem; }
+.qm-seg { display: grid; grid-template-columns: 1fr 1.4fr 1.4fr; gap: 6px; padding: 4px; border-radius: 14px; background: var(--card); border: 1px solid var(--line); }
+.qm-seg button { min-height: 44px; border-radius: 10px; border: 1.5px solid transparent; background: var(--card2); font-weight: 700; display: inline-flex; align-items: center; justify-content: center; gap: 6px; }
+.qm-seg button[aria-pressed="true"] { border-color: var(--gold); background: rgba(245, 200, 75, 0.14); color: var(--gold); }
+.qm-seg .qm-out[aria-pressed="true"] { border-color: var(--mute); background: var(--card2); color: var(--white); }
+.qm-seg .team-badge.sm { width: 30px; height: 30px; font-size: 0.7rem; }
+.qm-none { padding: 18px 12px; display: flex; flex-direction: column; align-items: center; gap: 8px; text-align: center; }
+.qm-none p { margin: 0; }
+.qm-empty { margin-top: 12px; display: flex; flex-direction: column; align-items: center; gap: 8px; text-align: center; padding: 24px 16px; border: 1px dashed var(--line); border-radius: 16px; background: var(--s0); }
+.qm-empty p { margin: 0; color: var(--mute); max-width: 32ch; font-size: 0.92rem; }
+.qm-empty-ico { width: 56px; height: 56px; border-radius: 16px; background: var(--card2); border: 1px solid var(--line); color: var(--gold); display: inline-flex; align-items: center; justify-content: center; }
+
+/* ---------- guests ---------- */
+.qm-guestbtns { margin-top: 8px; }
+.qm-guests { list-style: none; margin: 10px 0 0; padding: 0; display: flex; flex-direction: column; border: 1px solid var(--line); border-radius: 14px; background: var(--s0); }
+.qm-guest { display: flex; align-items: center; gap: 10px; padding: 8px 10px; border-top: 1px solid var(--line); min-height: 56px; }
+.qm-guest:first-child { border-top: 0; }
+.qm-guest .t { display: flex; flex-direction: column; min-width: 0; }
+.qm-guest .t b { overflow-wrap: anywhere; }
+.qm-guest .t small { font-size: 0.78rem; }
+
+/* ---------- score screen: states around the pad ---------- */
+.qm-center { min-height: 100dvh; display: flex; align-items: center; justify-content: center; padding: max(16px, env(safe-area-inset-top, 0px)) max(16px, env(safe-area-inset-right, 0px)) max(16px, env(safe-area-inset-bottom, 0px)) max(16px, env(safe-area-inset-left, 0px)); }
+.qm-cardc { width: 100%; max-width: 380px; display: flex; flex-direction: column; align-items: stretch; gap: 12px; text-align: center; padding: 24px 20px; border-radius: 22px; background: var(--card); border: 1px solid var(--line); }
+.qm-cardc .logo-mark { align-self: center; }
+.qm-cardc-h { font-size: 1.1rem; }
+.qm-cardc p { margin: 0; line-height: 1.5; }
+.qm-cardc-ico { align-self: center; width: 52px; height: 52px; border-radius: 16px; display: inline-flex; align-items: center; justify-content: center; background: var(--card2); }
+.qm-cardc-ico.warn { color: var(--gold); }
+.qm-cardc-ico.ok { color: #4be38a; background: rgba(47, 191, 113, 0.16); }
+.qm-skel { display: flex; flex-direction: column; gap: 8px; align-items: center; }
+.qm-skel i { display: block; height: 10px; width: 80%; border-radius: 999px; background: linear-gradient(90deg, var(--card2), var(--line), var(--card2)); background-size: 200% 100%; animation: qmShimmer 1.4s linear infinite; }
+.qm-skel i + i { width: 55%; }
+@keyframes qmShimmer { from { background-position: 200% 0; } to { background-position: -200% 0; } }
+.qm-pill { align-self: center; display: inline-flex; align-items: center; gap: 6px; min-height: 28px; padding: 0 12px; border-radius: 999px; font-size: 0.75rem; font-weight: 800; background: var(--card2); border: 1px solid var(--line); color: var(--mute); white-space: nowrap; }
+.qm-dot { width: 8px; height: 8px; border-radius: 50%; background: currentColor; }
+.qm-pill.phone { background: rgba(245, 200, 75, 0.14); border-color: var(--gold); color: var(--gold); }
+.qm-pill.bad { background: rgba(229, 72, 77, 0.16); border-color: var(--red); color: #ff9a9e; }
+.qm-pill.ok { background: rgba(47, 191, 113, 0.14); border-color: var(--green); color: #4be38a; }
+
+/* the scoring pad keeps its own look; here it only sits below the status strip instead of filling the whole screen */
+.qm-score { max-width: 480px; margin: 0 auto; height: 100dvh; display: flex; flex-direction: column; padding-top: max(10px, env(safe-area-inset-top, 0px)); padding-left: max(12px, env(safe-area-inset-left, 0px)); padding-right: max(12px, env(safe-area-inset-right, 0px)); gap: 8px; }
+.qm-score > .qm-note, .qm-score > .qm-alert, .qm-score > .qm-scorebar { flex: none; }
+.qm-score > .pad-page { flex: 1; min-height: 0; height: auto; width: 100%; min-width: 0; padding-left: 0; padding-right: 0; padding-top: 0; }
+.qm-scorebar { display: flex; align-items: center; justify-content: space-between; gap: 10px; min-height: 32px; }
+.qm-scorebar-t { display: inline-flex; align-items: center; gap: 6px; color: var(--mute); font-size: 0.82rem; font-weight: 700; }
+.qm-help { margin-top: 10px; min-height: 44px; padding: 0 16px; border-radius: 12px; background: rgba(245, 200, 75, 0.14); border: 1px solid var(--gold); color: var(--gold); font-weight: 800; }
+.qm-helpbox { margin-top: 10px; display: flex; flex-direction: column; gap: 8px; }
+.qm-helpbox p { color: #ffd0d2; }
+.qm-helpbtns { display: flex; flex-direction: column; gap: 8px; }
+.qm-helpbtns .btn { width: 100%; }
+.qm-score > .qm-alert { max-height: 60dvh; overflow-y: auto; }

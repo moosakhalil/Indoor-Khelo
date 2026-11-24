@@ -173,7 +173,7 @@ describe("the PDF file", () => {
     const [s, f] = [await pages(shortBytes), await pages(fullBytes)];
     expect(s).toBeGreaterThan(0);
     expect(f).toBeGreaterThan(s);
-    expect(f).toBeGreaterThanOrEqual(s + 3);                 // 240 balls need several extra pages
+    expect(f).toBeGreaterThanOrEqual(s + 3);                 // 40 overs with every ball sentence need extra pages (back to the original +3)
     expect(tail(fullBytes)).toContain("%%EOF");
   });
 

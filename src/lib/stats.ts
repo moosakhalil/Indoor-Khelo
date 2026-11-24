@@ -2,6 +2,12 @@
 // Pure functions, no database: the same events always give the same figures, so a correction can simply be replayed.
 import { BOWLER_WICKETS, type BallRecord, type DismissalType, type InningsState, type MatchState, type Side } from "@/lib/engine/types";
 
+/** Lower economy ranks first. Two players who never bowled (Infinity) tie: Infinity - Infinity would be NaN and nobody would win. */
+export function compareEconomy(a: number, b: number): number {
+  if (a === b) return 0;
+  return a < b ? -1 : 1;
+}
+
 export type BatLine = {
   innings: number; runs: number; balls: number; fours: number; sixes: number;
   dots: number; singles: number; twos: number; threes: number; fives: number; freeHitRuns: number;
@@ -195,7 +201,7 @@ export function computeMatchStats(m: MatchState): { players: PlayerMatch[]; pom:
   const runsOf = (p: PlayerMatch) => p.bat.reduce((a, b) => a + b.runs, 0);
   const wktsOf = (p: PlayerMatch) => p.bowl.reduce((a, b) => a + b.wickets, 0);
   const cmp = (a: PlayerMatch, b: PlayerMatch) =>
-    b.points - a.points || (b.result === "win" ? 1 : 0) - (a.result === "win" ? 1 : 0) || runsOf(b) - runsOf(a) || wktsOf(b) - wktsOf(a) || econ(a) - econ(b);
+    b.points - a.points || (b.result === "win" ? 1 : 0) - (a.result === "win" ? 1 : 0) || runsOf(b) - runsOf(a) || wktsOf(b) - wktsOf(a) || compareEconomy(econ(a), econ(b));
   const ranked = [...eligible].sort(cmp);
   const best = ranked[0]!;
   const winners = ranked.filter((p) => cmp(best, p) === 0);

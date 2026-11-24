@@ -1,11 +1,12 @@
 import type { Metadata } from "next";
-import Link from "next/link";
-import CommunityLogo from "@/components/CommunityLogo";
 import Frame from "@/components/Frame";
+import TeamsList from "@/components/TeamsList";
 import { requireMember } from "@/lib/community";
-import { requireAcceptedUser } from "@/lib/session";
+import { teamMatchCounts } from "@/lib/listB4";
 import { teamTable } from "@/lib/reports";
-import { listTeams } from "@/lib/teams";
+import { requireAcceptedUser } from "@/lib/session";
+import { listTeams, teamsOfPlayer } from "@/lib/teams";
+import type { TableRow, TeamItem } from "@/lib/teamList";
 
 export const metadata: Metadata = { title: "Teams" };
 
@@ -14,53 +15,30 @@ export default async function TeamsPage({ params }: { params: Promise<{ id: stri
   const user = await requireAcceptedUser();
   await requireMember(id, user.id);
   const teams = await listTeams(id);
-  const table = (await teamTable(id, teams.map((t) => ({ id: t.id, name: t.name })))).filter((t) => t.played > 0);
+  const [records, counts, squads] = await Promise.all([
+    teamTable(id, teams.map((t) => ({ id: t.id, name: t.name }))),
+    teamMatchCounts(id),
+    teamsOfPlayer(id, user.id),
+  ]);
+  const mine = new Set(squads.map((s) => s.id));
+  for (const t of teams) if (t.captain_id === user.id || t.vice_captain_id === user.id) mine.add(t.id);
+  const byId = new Map(records.map((r) => [r.id, r]));
+  const items: TeamItem[] = teams.map((t) => {
+    const r = byId.get(t.id);
+    return {
+      id: t.id, name: t.name, captain: t.captain_name, vice: t.vice_name, squad: t.squad_count, mine: mine.has(t.id),
+      matches: counts.get(t.id) ?? 0,
+      played: r?.played ?? 0, won: r?.won ?? 0, lost: r?.lost ?? 0, tied: r?.tied ?? 0,
+      form: (r?.history ?? []).slice(-5).map((h) => ({ result: h.result, opponent: h.opponent })),
+    };
+  });
+  // The table is the records in their ranked order (wins, then win percentage, then runs). A team that has not played is not in it.
+  const table: TableRow[] = records.filter((r) => r.played > 0).map((r, i) => ({
+    id: r.id, name: r.name, rank: i + 1, played: r.played, won: r.won, lost: r.lost, tied: r.tied, winPercent: r.winPercent, totalRuns: r.totalRuns, mine: mine.has(r.id),
+  }));
   return (
     <Frame communityId={id} title="Teams">
-      <div className="stack">
-        {teams.length === 0 ? (
-          <section className="card center" style={{ padding: "24px 14px" }}>
-            <h2 style={{ fontSize: "1.1rem" }}>Make your first team</h2>
-            <p className="muted" style={{ margin: "6px 0 0", lineHeight: 1.5 }}>Teams keep a regular squad. Each match picks its own lineup, so the squad never changes by accident.</p>
-          </section>
-        ) : (
-          <section className="card list">
-            {teams.map((t) => (
-              <Link key={t.id} href={`/c/${id}/teams/${t.id}`} className="item">
-                <CommunityLogo name={t.name} />
-                <span className="t grow">
-                  <b>{t.name}</b>
-                  <small>{t.captain_name ? `Captain ${t.captain_name}` : "No captain yet"}{t.vice_name ? ` · Vice ${t.vice_name}` : ""} · {t.squad_count} player{t.squad_count === 1 ? "" : "s"}</small>
-                </span>
-                <span aria-hidden="true">›</span>
-              </Link>
-            ))}
-          </section>
-        )}
-        {table.length > 0 && (
-          <section className="card">
-            <b>Team table</b>
-            <table className="board" aria-label="Team table">
-              <thead><tr><td className="muted small">Team</td><td className="muted small">P</td><td className="muted small">W</td><td className="muted small">L</td><td className="muted small">T</td><td className="muted small">Win %</td><td className="muted small">Runs</td></tr></thead>
-              <tbody>
-                {table.map((t) => (
-                  <tr key={t.id}><td><Link href={`/c/${id}/teams/${t.id}`}><b>{t.name}</b></Link></td><td>{t.played}</td><td>{t.won}</td><td>{t.lost}</td><td>{t.tied}</td><td>{t.winPercent === null ? "–" : t.winPercent.toFixed(0)}</td><td>{t.totalRuns}</td></tr>
-                ))}
-              </tbody>
-            </table>
-            <p className="muted small" style={{ margin: "6px 0 0" }}>Ranked by wins, then win percentage, then runs.</p>
-          </section>
-        )}
-        <Link href={`/c/${id}/teams/new`} className="btn gold">New team</Link>
-        <p className="muted small" style={{ margin: "0 2px" }}>Any member can create teams. Each team shows who created it and who changed it last.</p>
-        <section className="card list">
-          <Link href={`/c/${id}/members`} className="item"><span className="t grow"><b>Members</b><small>Everyone in this community</small></span><span aria-hidden="true">›</span></Link>
-          <Link href={`/c/${id}/series`} className="item"><span className="t grow"><b>Series</b><small>Group matches: best of 3, tournaments</small></span><span aria-hidden="true">›</span></Link>
-          <Link href={`/c/${id}/leaderboard`} className="item"><span className="t grow"><b>Leaderboards</b><small>Rank every member by any stat</small></span><span aria-hidden="true">›</span></Link>
-          <Link href={`/c/${id}/insights`} className="item"><span className="t grow"><b>Insights</b><small>Records, partnerships, bowling by over</small></span><span aria-hidden="true">›</span></Link>
-          <Link href={`/c/${id}/compare`} className="item"><span className="t grow"><b>Compare two players</b><small>Side by side</small></span><span aria-hidden="true">›</span></Link>
-        </section>
-      </div>
+      <TeamsList communityId={id} teams={items} table={table} />
     </Frame>
   );
 }

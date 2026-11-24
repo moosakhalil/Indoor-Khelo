@@ -1,8 +1,10 @@
 import type { Metadata } from "next";
+import CnDelete from "@/components/CnDelete";
 import Frame from "@/components/Frame";
-import { DeleteCommunityForm } from "@/components/Forms2";
 import { requireAdmin } from "@/lib/community";
+import { deleteCounts } from "@/lib/cnData";
 import { requireAcceptedUser } from "@/lib/session";
+import "@/components/cn.css";
 
 export const metadata: Metadata = { title: "Delete community" };
 
@@ -10,12 +12,10 @@ export default async function DeletePage({ params }: { params: Promise<{ id: str
   const { id } = await params;
   const user = await requireAcceptedUser();
   const { community } = await requireAdmin(id, user.id);
+  const counts = await deleteCounts(id);
   return (
     <Frame communityId={id} title="Delete community" back={`/c/${id}/settings`}>
-      <div className="stack">
-        <div className="banner red">This deletes <b>{community.name}</b>, all its members and its history for everyone. It cannot be undone.</div>
-        <DeleteCommunityForm communityId={id} name={community.name} />
-      </div>
+      <CnDelete communityId={id} name={community.name} counts={counts} />
     </Frame>
   );
 }

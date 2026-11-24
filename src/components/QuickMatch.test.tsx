@@ -107,7 +107,7 @@ describe("a new match with no signal", () => {
   it("is set up from the players kept on the phone, saved on the phone, and nothing is sent while offline", async () => {
     setOnline(false);
     await setUpForm();
-    expect(screen.getByText(/works with no signal/)).toBeTruthy();
+    expect(screen.getByText(/works with no signal/i)).toBeTruthy();
     // a guest typed by name, and a squad filled in one tap
     fireEvent.change(screen.getByLabelText(/Add a guest/), { target: { value: "Sami Guest" } });
     fireEvent.click(btn("Add to Team 2"));

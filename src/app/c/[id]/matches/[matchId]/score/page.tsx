@@ -3,7 +3,8 @@ import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import AutoRefresh from "@/components/AutoRefresh";
 import Frame from "@/components/Frame";
-import { LiveScore, Scorecard } from "@/components/Live";
+import LiveView, { AutoChip, ScorecardView } from "@/components/LiveView";
+import { IconBack } from "@/components/LvIcons";
 import ScoreGate from "@/components/ScoreGate";
 import ScoringPad from "@/components/ScoringPad";
 import { listApprovedMembers, requireMember } from "@/lib/community";
@@ -47,25 +48,34 @@ export default async function ScorePage({ params }: { params: Promise<{ id: stri
     );
   }
 
-  const scorers = await scorersOf(matchId);
+  const [scorers, everyone] = await Promise.all([scorersOf(matchId), listApprovedMembers(id)]);
+  const scorerNumber = lock?.scorer_id ? everyone.find((p) => p.user_id === lock.scorer_id)?.player_number ?? null : null;
+  const paused = match.status === "paused" || !!state?.paused;
+  const live = !!state && started;
+  const needLineups = !!reason && sizes.some((n) => n < 2);
+  const back = `/c/${id}/matches/${matchId}`;
   return (
-    <Frame communityId={id} title={done ? "Scorecard" : "Live score"} back={`/c/${id}/matches/${matchId}`}>
-      {!done && <AutoRefresh seconds={5} />}
-      <div className="stack">
-        <div className="card center">
-          <b style={{ fontSize: "1.1rem" }}>{match.side1_name} v {match.side2_name}</b>
-          <small className="muted" style={{ display: "block" }}>{match.overs} overs{scorers.length ? ` · Scored by ${scorers.map((s) => s.name).join(", ")}` : ""}</small>
+    <Frame communityId={id} title="Live score" subtitle={<small className="muted lv-sub">{match.side1_name} v {match.side2_name}</small>} back={back} right={<AutoChip paused={paused} />}>
+      <AutoRefresh seconds={5} />
+      <div className={`lv-root${live ? " two" : ""}`}>
+        <div className="lv-col lv-main">
+          <LiveView m={state} sides={[match.side1_name, match.side2_name]} venue={match.venue || undefined} paused={paused} scoredBy={scorers.map((s) => s.name)} />
+          {!live && <p className="muted small center" style={{ margin: 0 }}>{match.overs} overs</p>}
         </div>
-        {state && <LiveScore m={state} />}
-        {!done && (
+        <div className="lv-col lv-side">
           <ScoreGate
             communityId={id} matchId={matchId} me={user.id} isAdmin={membership.role === "admin"} scorerId={lock?.scorer_id ?? null} scorerName={lock?.scorer_name ?? null}
             takeoverBy={lock?.takeover_by ?? null} takeoverName={lock?.takeover_name ?? null} canScore={!reason} reason={reason} started={started}
+            scorerNumber={scorerNumber} lineupsHref={needLineups ? `/c/${id}/matches/${matchId}/lineup` : null}
           />
-        )}
-        {reason && !done && sizes.some((n) => n < 2) && <Link href={`/c/${id}/matches/${matchId}/lineup`} className="btn gold">Pick lineups</Link>}
-        {state && started && <Scorecard m={state} />}
-        <Link href={`/c/${id}/matches/${matchId}`} className="btn ghost">Back to the match</Link>
+          {state && started && (
+            <>
+              <h2 className="lv-h">Scorecard</h2>
+              <ScorecardView m={state} />
+            </>
+          )}
+          <Link href={back} className="btn ghost lv-btn"><IconBack size={18} />Back to the match</Link>
+        </div>
       </div>
     </Frame>
   );

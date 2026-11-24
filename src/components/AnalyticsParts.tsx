@@ -65,6 +65,39 @@ export function FormChart({ points, metric }: { points: FormPoint[]; metric: "ru
   );
 }
 
+/**
+ * Phase F2: the same bars as FormChart without the card and the sentence, so the player analytics screen can put its own title,
+ * trend badge, legend and number tiles around it. FormChart itself is unchanged. Draws nothing for an empty list.
+ */
+export function FormBars({ points, metric }: { points: FormPoint[]; metric: "runs" | "wickets" }) {
+  if (!points.length) return null;
+  const h = 170, inner = h - PAD.t - PAD.b;
+  const maxY = niceMax(Math.max(5, ...points.map((p) => p.value)));
+  const step = (W - PAD.l - PAD.r) / points.length, bw = Math.min(30, step * 0.62);
+  const s = formSummary(points);
+  const avgY = s.average === null ? null : PAD.t + inner - (inner * s.average) / maxY;
+  const words = points.map((p) => `${p.value}${p.notOut ? " not out" : ""}`).join(", ");
+  return (
+    <svg viewBox={`0 0 ${W} ${h}`} role="img" aria-label={`${metric === "runs" ? "Runs" : "Wickets"} in the last ${points.length} matches, oldest first: ${words}`} style={{ width: "100%", height: "auto" }}>
+      <Axes h={h} maxY={maxY} />
+      {points.map((p, i) => {
+        const bh = Math.max(p.value === 0 ? 3 : 4, (inner * p.value) / maxY);
+        const x = PAD.l + i * step + (step - bw) / 2, y = PAD.t + inner - bh;
+        const duck = metric === "runs" && p.value === 0 && !p.notOut;
+        const fill = duck ? "none" : metric === "wickets" ? "var(--green)" : p.value >= 30 ? "var(--gold)" : "var(--blue)";
+        return (
+          <g key={p.matchId}>
+            <rect x={x} y={y} width={bw} height={bh} rx="4" fill={fill} stroke={duck ? "var(--red)" : "none"} strokeWidth={duck ? 2 : 0} strokeDasharray={duck ? "3 2" : undefined} />
+            <text x={x + bw / 2} y={y - 4} textAnchor="middle" fontSize="11" fontWeight="700" fill="var(--white)">{p.value}{p.notOut && metric === "runs" ? "*" : ""}</text>
+            <text x={x + bw / 2} y={h - 8} textAnchor="middle" fontSize="9" fill="var(--mute)">{i + 1}</text>
+          </g>
+        );
+      })}
+      {avgY !== null && <g aria-hidden="true"><line x1={PAD.l} x2={W - PAD.r} y1={avgY} y2={avgY} stroke="var(--orange)" strokeDasharray="5 4" /><text x={W - PAD.r} y={avgY - 4} textAnchor="end" fontSize="10" fill="var(--orange)">average {f1(s.average!)}</text></g>}
+    </svg>
+  );
+}
+
 /* ---------- 7. team form and scores ---------- */
 const WORD = { win: "Won", loss: "Lost", tie: "Tied", none: "No result" } as const;
 const LETTER = { win: "W", loss: "L", tie: "T", none: "–" } as const;

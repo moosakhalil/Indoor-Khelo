@@ -1,0 +1,262 @@
+/* Phase E1: the live scoring pad (UI redesign). Every class here starts with pp-. Flat colour only. Heights are minimums, so
+   large text grows a control instead of cutting it. The board scrolls; the keypad stays at the bottom edge. */
+
+main.pp-page {
+  max-width: 1100px; margin: 0 auto; height: 100dvh; display: flex; flex-direction: column;
+  padding: max(8px, env(safe-area-inset-top, 0px)) max(12px, env(safe-area-inset-right, 0px)) max(8px, env(safe-area-inset-bottom, 0px)) max(12px, env(safe-area-inset-left, 0px));
+}
+.pp-cq { flex: 1; min-height: 0; display: flex; flex-direction: column; container-type: inline-size; }
+.pp-frame { flex: 1; min-height: 0; display: flex; flex-direction: column; gap: 6px; }
+.pp-sr { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
+
+/* ---------- header ---------- */
+.pp-top { display: flex; align-items: center; gap: 6px; min-height: 52px; }
+.pp-back { min-width: 44px; min-height: 44px; display: inline-flex; align-items: center; justify-content: center; font-size: 1.8rem; line-height: 1; border-radius: 12px; }
+.pp-title { flex: 1; min-width: 0; display: flex; flex-direction: column; line-height: 1.2; }
+.pp-title b { font-size: 1rem; overflow-wrap: anywhere; line-height: 1.2; }
+.pp-title small { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 0.78rem; }
+.pp-hbtn { min-width: 52px; min-height: 48px; display: inline-flex; flex-direction: column; align-items: center; justify-content: center; gap: 1px; font-size: 0.7rem; font-weight: 700; border-radius: 12px; padding: 2px 6px; color: var(--white); }
+.pp-hbtn:disabled { opacity: 0.4; cursor: not-allowed; }
+.pp-hbtn:active:not(:disabled) { background: var(--card2); }
+.pp-help { min-width: 44px; min-height: 44px; border: 1.5px solid var(--line); border-radius: 50%; font-size: 1.1rem; font-weight: 800; color: var(--gold); }
+
+/* ---------- sync line ---------- */
+.pp-status { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; min-height: 40px; padding: 4px 10px; border-radius: 12px; border: 1px solid var(--line); font-size: 0.82rem; font-weight: 600; }
+.pp-status.green { background: rgba(47, 191, 113, 0.12); border-color: var(--green); color: #7fe0a8; }
+.pp-status.blue { background: rgba(90, 169, 255, 0.12); border-color: var(--blue); color: #a9d2ff; }
+.pp-status.orange { background: rgba(255, 181, 71, 0.14); border-color: var(--orange); color: var(--orange); }
+.pp-status.red { background: rgba(229, 72, 77, 0.14); border-color: var(--red); color: #ff9a9e; }
+.pp-st-ico { display: inline-flex; flex: none; }
+.pp-st-text { flex: 1; min-width: 160px; }
+.pp-st-by { color: var(--mute); font-weight: 500; }
+.pp-pill { border: 1px solid currentColor; border-radius: 999px; padding: 1px 8px; font-size: 0.7rem; font-weight: 800; letter-spacing: 0.04em; text-transform: uppercase; }
+.pp-send { min-height: 44px; margin: -4px 0; padding: 0 14px; border-radius: 999px; border: 1.5px solid currentColor; font-weight: 800; }
+
+/* ---------- scrolling area: notices and the board ---------- */
+.pp-scroll { flex: 1; min-height: 0; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; padding: 2px 0 6px; overscroll-behavior: contain; }
+.pp-scroll > * { flex: none; }
+.pp-note { display: flex; gap: 10px; align-items: flex-start; padding: 10px 12px; border-radius: 14px; border: 1px solid var(--line); background: var(--card); font-size: 0.9rem; line-height: 1.4; }
+.pp-note.bad { background: rgba(229, 72, 77, 0.14); border-color: var(--red); color: #ffc2c4; }
+.pp-note.info { background: rgba(90, 169, 255, 0.12); border-color: var(--blue); color: #cfe6ff; }
+.pp-note.gold { background: rgba(245, 200, 75, 0.12); border-color: var(--gold); }
+.pp-note.ok { background: rgba(47, 191, 113, 0.12); border-color: var(--green); color: #b6f0cf; }
+.pp-note-ico { flex: none; display: inline-flex; padding-top: 1px; }
+.pp-note-line { margin: 0 0 4px; }
+.pp-note-act { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
+.pp-note-act .btn, .pp-note-act a.btn { min-height: 44px; }
+.pp-note .btn:disabled { opacity: 0.45; }
+
+/* ---------- score bug ---------- */
+.pp-bug { background: var(--card); border: 1px solid var(--line); border-radius: 18px; overflow: hidden; }
+.pp-bug-top { display: flex; align-items: center; gap: 8px; padding: 8px 12px 0; flex-wrap: wrap; }
+.pp-live { display: inline-flex; align-items: center; gap: 5px; background: var(--red-solid); color: #fff; font-size: 0.7rem; font-weight: 800; letter-spacing: 0.06em; border-radius: 6px; padding: 2px 7px; }
+.pp-live.done { background: var(--card2); color: var(--white); border: 1px solid var(--line); }
+.pp-live-dot { width: 6px; height: 6px; border-radius: 50%; background: #fff; }
+.pp-bug-meta { font-size: 0.8rem; color: var(--mute); font-weight: 600; }
+.pp-paused { margin-left: auto; background: var(--orange); color: #1a1205; font-size: 0.7rem; font-weight: 800; letter-spacing: 0.06em; text-transform: uppercase; border-radius: 6px; padding: 2px 8px; }
+.pp-bug-main { display: flex; align-items: center; gap: 12px; padding: 6px 12px 8px; }
+.pp-bug-main .team-badge.lg { width: 52px; height: 52px; border-radius: 14px; font-size: 1.15rem; }
+.pp-bug-team { flex: 1; min-width: 0; display: flex; flex-direction: column; line-height: 1.25; }
+.pp-bug-team b { font-size: 1rem; overflow-wrap: anywhere; }
+.pp-bug-team small { font-size: 0.78rem; overflow-wrap: anywhere; }
+.pp-bug-score { text-align: right; flex: none; }
+.pp-score { font-family: var(--font-num); font-size: 2.7rem; font-weight: 700; line-height: 1; letter-spacing: -0.01em; }
+.pp-score span { font-size: 1.6rem; color: var(--mute); }
+.pp-ov { display: flex; flex-direction: column; line-height: 1.15; font-family: var(--font-num); }
+.pp-ov small { font-size: 0.72rem; }
+.pp-chase { background: rgba(245, 200, 75, 0.12); color: var(--gold); font-weight: 700; font-size: 0.9rem; padding: 8px 12px; border-top: 1px solid var(--line); }
+.pp-freehit { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; background: var(--orange); color: #1a1205; border-radius: 12px; padding: 8px 12px; }
+.pp-freehit b { letter-spacing: 0.06em; font-size: 1rem; }
+.pp-freehit small { font-weight: 700; }
+
+/* ---------- batters and bowler ---------- */
+.pp-players { background: var(--card); border: 1px solid var(--line); border-radius: 16px; overflow: hidden; }
+.pp-row { display: flex; align-items: center; gap: 10px; padding: 5px 12px; min-height: 48px; border-top: 1px solid var(--line); }
+.pp-row:first-child { border-top: 0; }
+.pp-on { background: rgba(245, 200, 75, 0.1); }
+.pp-need { background: rgba(255, 181, 71, 0.1); }
+.pp-need .pp-tag { color: var(--orange); }
+.pp-who { flex: 1; min-width: 0; display: flex; flex-direction: column; line-height: 1.2; }
+.pp-who b { overflow-wrap: anywhere; }
+.pp-tag { display: inline-flex; align-items: center; gap: 4px; font-size: 0.7rem; font-weight: 800; letter-spacing: 0.07em; color: var(--mute); }
+.pp-on .pp-tag { color: var(--gold); }
+.pp-fig { display: flex; align-items: baseline; gap: 4px; white-space: nowrap; font-family: var(--font-num); }
+.pp-n { font-size: 1.25rem; font-weight: 700; }
+.pp-ico { width: 36px; height: 36px; flex: none; border-radius: 50%; border: 1.5px solid var(--line); display: inline-flex; align-items: center; justify-content: center; color: var(--gold); }
+.pp-chipnote { border: 1px solid var(--line); border-radius: 999px; padding: 3px 12px; font-size: 0.8rem; font-weight: 700; }
+
+/* ---------- over strip ---------- */
+.pp-over { background: var(--card); border: 1px solid var(--line); border-radius: 16px; padding: 8px 12px 10px; }
+.pp-over-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.pp-over-head small { font-size: 0.7rem; font-weight: 800; letter-spacing: 0.08em; color: var(--mute); }
+.pp-over-head .ball-of { font-size: 0.8rem; }
+.pp-balls { display: flex; flex-wrap: wrap; gap: 8px 8px; margin-top: 8px; min-height: 44px; align-items: flex-start; }
+.pp-b { position: relative; display: inline-flex; flex-direction: column; align-items: center; gap: 3px; min-width: 44px; }
+.pp-ball { width: 44px; height: 44px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; background: var(--card2); border: 1.5px solid var(--line); font-weight: 800; font-size: 0.9rem; font-family: var(--font-num); }
+button.pp-ball { cursor: pointer; }
+.pp-ball.four { border-color: var(--blue); color: var(--blue); background: rgba(90, 169, 255, 0.12); }
+.pp-ball.six { border-color: var(--gold); background: var(--gold); color: var(--night); }
+.pp-ball.w { border-color: var(--red); background: var(--red-solid); color: #fff; }
+.pp-ball.x { border-color: var(--orange); color: var(--orange); background: rgba(255, 181, 71, 0.12); border-radius: 12px; }
+.pp-ball.empty { border: 1.5px dashed var(--line); background: transparent; }
+.pp-cap { font-size: 0.7rem; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; color: var(--mute); text-align: center; line-height: 1.1; max-width: 56px; }
+.pp-badge { position: absolute; top: -5px; right: -2px; width: 18px; height: 18px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; border: 2px solid var(--card); }
+.pp-badge.clk { background: var(--orange); color: #1a1205; }
+.pp-badge.bad { background: var(--red-solid); color: #fff; }
+.pp-b[data-state="pending"] .pp-ball { border-style: dashed; }
+.pp-part { display: block; padding: 0 4px; }
+
+/* earlier overs: shown beside the keypad on wide screens */
+.pp-prev { display: none; background: var(--card); border: 1px solid var(--line); border-radius: 16px; padding: 10px 12px; }
+.pp-prev-h { font-size: 0.7rem; font-weight: 800; letter-spacing: 0.08em; color: var(--mute); }
+.pp-prev-row { display: flex; align-items: center; gap: 10px; padding: 8px 0; border-top: 1px solid var(--line); margin-top: 8px; }
+.pp-prev-who { display: flex; flex-direction: column; min-width: 90px; line-height: 1.2; }
+.pp-prev-who small { font-size: 0.7rem; font-weight: 800; letter-spacing: 0.07em; color: var(--mute); }
+.pp-balls.small { margin-top: 0; flex: 1; gap: 6px; }
+.pp-balls.small .pp-ball { font-size: 0.82rem; }
+.pp-prev-runs { font-family: var(--font-num); font-size: 1.1rem; }
+
+.pp-hero { display: none; flex-wrap: wrap; flex-direction: column; align-items: center; gap: 8px; padding: 18px 12px; background: var(--card); border: 1px solid var(--line); border-radius: 18px; text-align: center; }
+.pp-hero-teams { display: flex; align-items: center; gap: 14px; }
+.pp-vs { color: var(--mute); font-weight: 700; }
+
+/* ---------- dock: keypad and the panels that replace it ---------- */
+.pp-dockw { position: relative; flex: none; }
+.pp-dock { padding-top: 6px; }
+.pp-keys { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; }
+.pp-keys > :nth-child(1) { grid-area: 2 / 1; }
+.pp-keys > :nth-child(2) { grid-area: 2 / 2; }
+.pp-keys > :nth-child(3) { grid-area: 2 / 3; }
+.pp-keys > :nth-child(4) { grid-area: 2 / 4; }
+.pp-keys > :nth-child(5) { grid-area: 3 / 1; }
+.pp-keys > :nth-child(6) { grid-area: 3 / 2; }
+.pp-keys > :nth-child(7) { grid-area: 3 / 3; }
+.pp-keys > :nth-child(8) { grid-area: 1 / 1 / 2 / 5; }
+.pp-keys > :nth-child(9) { grid-area: 4 / 1; }
+.pp-keys > :nth-child(10) { grid-area: 4 / 2; }
+.pp-keys > :nth-child(11) { grid-area: 3 / 4; }
+.pp-keys > :nth-child(12) { grid-area: 4 / 3; }
+.pp-keys > :nth-child(13) { grid-area: 4 / 4; }
+.pp-key { min-height: 62px; border-radius: 14px; border: 1.5px solid var(--line); background: var(--card2); font-family: var(--font-num); font-weight: 700; font-size: 1.6rem; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; text-align: center; padding: 4px; line-height: 1.1; }
+.pp-key[data-cap]::after { content: attr(data-cap); font-family: var(--font-jakarta), system-ui, sans-serif; font-size: 0.7rem; font-weight: 800; letter-spacing: 0.08em; color: var(--mute); }
+.pp-key:active:not(:disabled) { background: var(--card); transform: scale(0.97); }
+.pp-key:disabled { opacity: 0.4; cursor: not-allowed; }
+.pp-key.k4 { border-color: var(--blue); color: var(--blue); background: rgba(90, 169, 255, 0.1); }
+.pp-key.k6 { background: var(--gold); border-color: var(--gold); color: var(--night); }
+.pp-key.k6[data-cap]::after { color: var(--night); }
+.pp-key.x, .pp-key.w, .pp-key.more { font-family: var(--font-jakarta), system-ui, sans-serif; font-size: 0.85rem; font-weight: 800; letter-spacing: 0; padding: 4px 2px; overflow-wrap: normal; }
+.pp-key.x { border-color: var(--orange); color: var(--orange); background: rgba(255, 181, 71, 0.1); }
+.pp-key.x.armed { background: var(--orange); color: #1a1205; }
+.pp-key.w { border-color: var(--red); color: #ff9a9e; background: rgba(229, 72, 77, 0.1); }
+.pp-key.wk.off { opacity: 0.6; }
+.pp-key.wk[data-cap]::after { color: var(--orange); }
+.pp-key.ro.allowed { background: var(--red-solid); border-color: var(--red); color: #fff; }
+.pp-key.ro.allowed[data-cap]::after { color: #fff; }
+.pp-key.more { background: var(--card2); color: var(--white); flex-direction: row; gap: 4px; }
+
+.pp-undo-bar { position: relative; display: flex; align-items: center; gap: 10px; min-height: 52px; background: var(--card2); border: 1px solid var(--line); border-radius: 14px; padding: 0 12px; }
+.pp-undo { display: inline-flex; align-items: center; gap: 8px; min-height: 52px; font-weight: 800; flex: none; }
+.pp-undo::after { content: ""; position: absolute; inset: 0; }          /* the whole bar is the button */
+.pp-undo:disabled { cursor: not-allowed; }
+.pp-undo-bar:has(.pp-undo:disabled) { opacity: 0.65; }
+.pp-undo-note { flex: 1; min-width: 0; font-size: 0.82rem; color: var(--mute); text-align: left; overflow-wrap: anywhere; line-height: 1.25; padding: 4px 0; }
+.pp-undo-wide { display: flex; flex-direction: column; gap: 4px; }
+.pp-undo-wide small { text-align: center; }
+.pp-btn-ico { display: inline-flex; margin-right: 6px; }
+
+.pp-armed { background: rgba(255, 181, 71, 0.14); border: 1px solid var(--orange); color: var(--orange); border-radius: 12px; padding: 8px 12px; margin-bottom: 8px; font-weight: 700; font-size: 0.9rem; }
+.pp-armed-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.pp-armed small { display: block; margin-top: 4px; font-weight: 600; color: var(--white); opacity: 0.9; line-height: 1.35; }
+.pp-chipbtn { min-height: 44px; padding: 0 14px; border-radius: 12px; border: 1.5px solid currentColor; font-weight: 700; font-size: 0.85rem; }
+.pp-paused-bar { display: flex; flex-direction: column; gap: 8px; margin-bottom: 8px; }
+
+.pp-panel { display: flex; flex-direction: column; gap: 10px; }
+.pp-card { display: flex; gap: 10px; align-items: flex-start; padding: 12px; border-radius: 14px; border: 1px solid var(--line); background: var(--card); margin: 0; font-size: 0.9rem; line-height: 1.4; }
+.pp-card > div, .pp-card > span:not(.pp-card-ico) { flex: 1; min-width: 0; }
+.pp-card b { display: block; }
+.pp-card span > b, .pp-card div > span { display: block; }
+.pp-card.gold { background: rgba(245, 200, 75, 0.1); border-color: rgba(245, 200, 75, 0.45); }
+.pp-card.green { background: rgba(47, 191, 113, 0.12); border-color: var(--green); }
+.pp-card.info { background: rgba(90, 169, 255, 0.12); border-color: var(--blue); }
+.pp-card-ico { flex: none; display: inline-flex; color: #4be38a; }
+.pp-two { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.pp-big { min-height: 56px; width: 100%; font-weight: 800; }
+.pp-warn { color: #ff9a9e; }
+
+.pp-toast { position: absolute; left: 0; right: 0; bottom: calc(100% + 8px); z-index: 90; display: flex; gap: 10px; align-items: flex-start; padding: 10px 14px; border-radius: 14px; background: #2a3350; font-weight: 600; font-size: 0.92rem; animation: ppIn 0.2s ease; }
+.pp-toast.top { position: fixed; top: max(10px, env(safe-area-inset-top, 0px)); bottom: auto; left: 12px; right: 12px; max-width: 520px; margin: 0 auto; z-index: 100; }
+.pp-toast.green { background: #14472c; border: 1px solid var(--green); }
+.pp-toast.warn { background: #6b4a12; border: 1px solid var(--orange); }
+.pp-toast.red { background: #6e2327; border: 1px solid var(--red); }
+.pp-toast-ico { flex: none; display: inline-flex; padding-top: 1px; }
+.pp-toast-body { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.pp-toast-h { font-size: 0.72rem; letter-spacing: 0.06em; text-transform: uppercase; }
+.pp-toast small { font-weight: 500; opacity: 0.9; }
+@keyframes ppIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+
+/* ---------- the sync sheet and the More menu ---------- */
+.pp-held { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.pp-held li { display: flex; gap: 10px; align-items: flex-start; padding: 10px 12px; background: rgba(229, 72, 77, 0.1); border: 1px solid var(--red); border-radius: 12px; }
+.pp-held li div { display: flex; flex-direction: column; }
+.pp-held-ico { color: #ff9a9e; display: inline-flex; padding-top: 2px; }
+.pp-more-sub { margin: 0 0 4px; font-size: 0.85rem; color: var(--mute); }
+.pp-more-h { margin: 14px 0 6px; font-size: 0.72rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--mute); font-weight: 800; }
+.pp-tiles { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; align-items: start; }
+.pp-tilew { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+.pp-tile { min-height: 56px; display: flex; align-items: center; gap: 10px; text-align: left; padding: 8px 12px; border-radius: 14px; border: 1.5px solid var(--line); background: var(--card2); font-weight: 600; font-size: 0.88rem; line-height: 1.2; width: 100%; overflow-wrap: anywhere; }
+.pp-tile:active:not(:disabled) { background: var(--card); }
+.pp-tile:disabled { opacity: 0.38; cursor: not-allowed; }
+.pp-tile-ico { flex: none; display: inline-flex; color: var(--gold); }
+.pp-why { font-size: 0.72rem; color: var(--mute); padding: 0 4px; line-height: 1.25; }
+.pp-end { width: 100%; min-height: 56px; display: flex; align-items: center; justify-content: center; gap: 10px; border: 1.5px solid var(--red); color: #ff9a9e; background: rgba(229, 72, 77, 0.1); border-radius: 14px; font-weight: 800; padding: 8px 12px; }
+.pp-end:disabled { opacity: 0.4; cursor: not-allowed; }
+.pp-handover { width: 100%; min-height: 52px; display: flex; align-items: center; justify-content: center; gap: 10px; border: 1.5px solid var(--line); background: var(--card2); border-radius: 14px; font-weight: 700; padding: 8px 12px; }
+.pp-more-note { margin: 4px 4px 12px; font-size: 0.78rem; color: var(--mute); }
+.pp-danger, .pp-stop { display: flex; flex-direction: column; }
+
+/* ---------- start of the match / innings ---------- */
+.pp-steps { list-style: none; display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; margin: 0; padding: 0; font-size: 0.72rem; font-weight: 700; color: var(--mute); }
+.pp-steps li { display: flex; flex-direction: column; gap: 4px; }
+.pp-steps li > span:last-child { display: inline-flex; align-items: center; gap: 4px; }
+.pp-seg { height: 5px; border-radius: 3px; background: var(--line); }
+.pp-steps li.done { color: var(--gold); }
+.pp-steps li.done .pp-seg { background: var(--gold); }
+.pp-start-h { font-size: 1.15rem; }
+.pp-teams { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.pp-link { align-self: flex-start; color: var(--gold); text-decoration: underline; min-height: 44px; display: inline-flex; align-items: center; font-weight: 600; text-align: left; }
+.pp-group-h { display: block; }
+.pp-start .field { min-height: 52px; }
+.pp-start .cb { min-height: 48px; background: var(--card2); }
+.pp-start .cb[aria-pressed="true"] { background: var(--gold); color: var(--night); border-color: var(--gold); }
+.pp-start .cb.bad, .pp-start .cb.bad[aria-pressed="true"] { background: rgba(229, 72, 77, 0.2); border-color: var(--red); color: #ff9a9e; }
+.pp-chip-shirt { display: inline-flex; }
+.pp-chip-shirt .shirt.small { width: 30px; height: 30px; }
+.pp-start .cb[aria-pressed="true"] .pp-chip-shirt { background: var(--night); border-radius: 50%; padding: 1px; }
+.pp-start .coin-face { background: var(--gold); box-shadow: none; border-color: #c9971f; }
+.pp-start .toss { background: var(--card); }
+.pp-err { display: flex; align-items: center; gap: 6px; margin: 0; }
+.pp-startbar { position: sticky; bottom: 0; background: var(--night); padding-top: 8px; padding-bottom: 2px; display: flex; flex-direction: column; gap: 6px; margin-top: auto; border-top: 1px solid var(--line); }
+.pp-startnote { margin: 0; font-size: 0.85rem; color: var(--mute); text-align: center; min-height: 1.2em; }
+.pp-startnote.ok { color: var(--gold); font-weight: 700; }
+
+/* forms (start panels) use the whole height: the board shrinks, the form scrolls and the Start button stays at the bottom edge */
+.pp-frame.form .pp-scroll { flex: none; overflow: visible; }
+.pp-frame.form .pp-dockw { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; }
+.pp-frame.form .pp-dock { flex: 1; min-height: 0; overflow-y: auto; display: flex; flex-direction: column; }
+.pp-frame.form .pp-start { flex: 1; }
+
+/* ---------- tablet and desktop: board on the left, keypad on the right ---------- */
+@container (min-width: 720px) {
+  .pp-frame { display: grid; grid-template-columns: minmax(0, 1fr) minmax(360px, 420px); grid-template-rows: auto auto minmax(0, 1fr); column-gap: 20px; row-gap: 6px; }
+  .pp-top, .pp-status { grid-column: 1 / -1; }
+  .pp-scroll { grid-column: 1; grid-row: 3; }
+  .pp-dockw { grid-column: 2; grid-row: 3; align-self: end; max-height: 100%; }
+  .pp-frame.form .pp-scroll { flex: initial; overflow-y: auto; }
+  .pp-frame.form .pp-dockw { align-self: stretch; }
+  .pp-prev { display: block; }
+  .pp-hero { display: flex; }
+}
+@container (max-width: 340px) {
+  .pp-two { grid-template-columns: 1fr; }
+  .pp-tiles { grid-template-columns: 1fr; }
+}

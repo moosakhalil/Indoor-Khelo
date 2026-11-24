@@ -1,15 +1,20 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import Frame from "@/components/Frame";
+import CommunityLogo from "@/components/CommunityLogo";
+import PfIcon, { type PfIconName } from "@/components/PfIcons";
+import { PfLogoutCard, PfLogoutIcon } from "@/components/PfAccount";
+import { PfCareerStrip, PfDetails, PfPlayerCard, PfStatsStart } from "@/components/PfParts";
+import PfShare from "@/components/PfShare";
 import Shirt from "@/components/Shirt";
-import SignOutButton, { SignOutAllButton } from "@/components/SignOutButton";
-import CopyButton from "@/components/CopyButton";
-import { shareProfileAction } from "@/app/actions8";
+import { careerOf } from "@/lib/career";
 import { listMyCommunities, requireMember } from "@/lib/community";
 import { getOrigin } from "@/lib/origin";
 import { profileShareToken } from "@/lib/profileShare";
 import { getProfile } from "@/lib/profile";
+import { playerLines } from "@/lib/reports";
 import { requireAcceptedUser } from "@/lib/session";
+import { teamsOfPlayer } from "@/lib/teams";
 import { BATTING_HANDS, BATTING_POSITIONS, BOWLING_STYLES, PLAYING_ROLES, labelOf } from "@/lib/validation";
 
 export const metadata: Metadata = { title: "Profile" };
@@ -18,73 +23,89 @@ export default async function ProfilePage({ params }: { params: Promise<{ id: st
   const { id } = await params;
   const user = await requireAcceptedUser();
   const { community, membership } = await requireMember(id, user.id);
-  const [profile, all, token, origin] = await Promise.all([getProfile(user.id), listMyCommunities(user.id), profileShareToken(user.id), getOrigin()]);
+  const [profile, all, token, origin, teams, lines] = await Promise.all([
+    getProfile(user.id), listMyCommunities(user.id), profileShareToken(user.id), getOrigin(), teamsOfPlayer(id, user.id), playerLines(id, user.id, {}),
+  ]);
   const mine = all.filter((c) => c.status === "approved");
-  const rows: [string, string | null][] = [
-    ["Playing role", labelOf(PLAYING_ROLES, profile?.playing_role)],
-    ["Batting hand", labelOf(BATTING_HANDS, profile?.batting_hand)],
-    ["Batting position", labelOf(BATTING_POSITIONS, profile?.batting_position)],
-    ["Bowling style", labelOf(BOWLING_STYLES, profile?.bowling_style)],
+  const career = careerOf(lines);
+  const role = labelOf(PLAYING_ROLES, profile?.playing_role);
+  const hand = labelOf(BATTING_HANDS, profile?.batting_hand);
+  const position = labelOf(BATTING_POSITIONS, profile?.batting_position);
+  const bowling = labelOf(BOWLING_STYLES, profile?.bowling_style);
+  const rows: [string, string | null][] = [["Playing role", role], ["Batting hand", hand], ["Batting position", position], ["Bowling style", bowling]];
+  const editHref = `/c/${id}/profile/edit`;
+  const statsHref = `/c/${id}/players/${user.id}`;
+  const isAdmin = membership.role === "admin";
+
+  const quick = (
+    <nav className="pf-qa" aria-label="Quick actions">
+      <Link href={editHref}><PfIcon name="pencil" size={20} />Edit profile</Link>
+      <Link href={statsHref}><PfIcon name="chart" size={20} />My stats</Link>
+      <Link href={`/c/${id}/profile/payments`}><PfIcon name="wallet" size={20} />My payments</Link>
+      <Link href={`/c/${id}/number`}><PfIcon name="swap" size={20} />Change number</Link>
+    </nav>
+  );
+  const menu: [string, string, string, PfIconName][] = [
+    [`/c/${id}/community`, "Community page", "Members, invite, switch, leave", "shield"],
+    ["/switch", "Your communities", "Switch, create or join another", "swap"],
+    ["/account", "Account", "Log out everywhere, delete account", "cog"],
   ];
+
   return (
-    <Frame communityId={id} title="Profile">
-      <div className="stack">
-        <section className="card center">
-          <div style={{ display: "flex", justifyContent: "center" }}><Shirt number={membership.player_number} size="big" /></div>
-          <h2 style={{ marginTop: 8 }}>{user.name}</h2>
-          <p className="muted small" style={{ margin: "2px 0 0" }}>Number {membership.player_number} in {community.name}</p>
-        </section>
+    <Frame
+      communityId={id}
+      title="Profile"
+      subtitle={<small className="muted">{community.name}</small>}
+      right={<PfLogoutIcon />}
+      panel={<div className="pf-panel-qa pf-box"><div className="pf-box-head"><h2>Quick actions</h2></div><div style={{ marginTop: 10 }}>{quick}</div></div>}
+    >
+      <div className="pf-page">
+        <PfPlayerCard
+          communityId={id} name={user.name} number={membership.player_number} isMe
+          subtitle={`${isAdmin ? "Admin · " : ""}Number ${membership.player_number} · you`}
+          role={role} hand={hand} position={position} bowling={bowling}
+          teams={teams.map((t) => ({ ...t, mine: true }))} editHref={editHref}
+        />
+        <div className="pf-qa-inline">{quick}</div>
 
-        <section className="card list">
-          {rows.map(([label, value]) => (
-            <div key={label} className="item space"><span className="muted">{label}</span><b>{value ?? "Not set"}</b></div>
-          ))}
-        </section>
-        <Link href={`/c/${id}/profile/edit`} className="btn gold">Edit my profile</Link>
-        <Link href={`/c/${id}/profile/payments`} className="btn ghost">My payments</Link>
-        <Link href={`/c/${id}/players/${user.id}`} className="btn ghost">See how others see me</Link>
-
-        <section className="card" id="share">
-          <h2 style={{ fontSize: "1rem" }}>Share my profile</h2>
-          {token ? (
-            <>
-              <p className="muted small" style={{ margin: "6px 0" }}>Anyone who has this link can see your profile and career totals without signing in. It shows no community names, no match list and nothing about payments. Only you can switch it off.</p>
-              <div className="row space"><span className="mono" style={{ fontSize: "0.75rem", overflowWrap: "anywhere" }}>{`${origin}/p/${token}`}</span><CopyButton text={`${origin}/p/${token}`} /></div>
-              <form action={shareProfileAction} style={{ marginTop: 10 }}>
-                <input type="hidden" name="communityId" value={id} /><input type="hidden" name="on" value="0" />
-                <button className="btn ghost small">Stop sharing (the link stops working)</button>
-              </form>
-            </>
-          ) : (
-            <>
-              <p className="muted small" style={{ margin: "6px 0 10px" }}>Off. Nobody outside the app can see your profile. If you switch it on, you get a link that shows your profile and career totals (no community names, no match list). You can switch it off at any time.</p>
-              <form action={shareProfileAction}>
-                <input type="hidden" name="communityId" value={id} /><input type="hidden" name="on" value="1" />
-                <button className="btn gold small">Create a public link</button>
-              </form>
-            </>
-          )}
-        </section>
-
-        <section className="card list">
-          <h2 style={{ fontSize: "1rem", paddingBottom: 6 }}>My communities and numbers</h2>
-          {mine.map((c) => (
-            <div key={c.id} className="item">
-              <Shirt number={c.player_number} size="small" />
-              <span className="t grow"><b>{c.name}</b><small>{c.role === "admin" ? "Admin" : "Member"}</small></span>
-              {c.id === id && <Link href={`/c/${id}/number`} className="chip gold">Change number</Link>}
-            </div>
-          ))}
-        </section>
-
-        <section className="card list">
-          <Link href={`/c/${id}/community`} className="item"><span className="t grow"><b>Community page</b><small>Members, invite, switch, leave</small></span><span aria-hidden="true">›</span></Link>
-          <Link href="/switch" className="item"><span className="t grow"><b>Your communities</b><small>Switch, create or join another</small></span><span aria-hidden="true">›</span></Link>
-          <Link href="/account" className="item"><span className="t grow"><b>Account</b><small>Log out everywhere, delete account</small></span><span aria-hidden="true">›</span></Link>
-        </section>
-        <p className="muted small" style={{ margin: "0 2px" }}>Career stats, awards and more settings arrive in later build phases.</p>
-        <SignOutButton />
-        <SignOutAllButton />
+        <div className="pf-bento">
+          <div className="pf-col">
+            {career.matches === 0
+              ? <section className="pf-box" aria-label="Career in this community"><div className="pf-box-head"><h2>Career in this community</h2></div><div style={{ marginTop: 10 }}><PfStatsStart text="Runs, wickets and awards appear here after your first finished match." /></div></section>
+              : <PfCareerStrip career={career} title="Career in this community" fullHref={statsHref} />}
+            <PfDetails rows={rows} editHref={editHref} />
+          </div>
+          <div className="pf-col">
+            <PfShare communityId={id} token={token} origin={origin} />
+            <section className="pf-box" aria-label="My communities and numbers">
+              <div className="pf-box-head"><h2>My communities and numbers</h2></div>
+              {mine.map((c) => {
+                const here = c.id === id;
+                const body = (
+                  <>
+                    <CommunityLogo name={c.name} />
+                    <span className="t"><b>{c.name}</b><small>{c.role === "admin" ? "Admin" : "Member"}{here ? " · here" : c.player_number !== null ? ` · number ${c.player_number}` : ""}</small></span>
+                    <Shirt number={c.player_number} size="small" />
+                  </>
+                );
+                return here ? (
+                  <div key={c.id} className="pf-comm">
+                    {body}
+                    <Link href={`/c/${id}/number`} className="btn ghost small" aria-label={`Change my number in ${c.name}`}><PfIcon name="swap" size={16} /> Change</Link>
+                  </div>
+                ) : (
+                  <Link key={c.id} href={`/c/${c.id}/profile`} className="pf-comm">{body}<PfIcon name="chevron" size={18} /></Link>
+                );
+              })}
+            </section>
+          </div>
+          <section className="pf-box pf-menu pf-span" aria-label="More">
+            {menu.map(([href, title, sub, icon]) => (
+              <Link key={href} href={href}><span className="ic"><PfIcon name={icon} size={20} /></span><span className="t"><b>{title}</b><small>{sub}</small></span><PfIcon name="chevron" size={18} /></Link>
+            ))}
+          </section>
+        </div>
+        <PfLogoutCard />
       </div>
     </Frame>
   );

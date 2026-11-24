@@ -1,0 +1,37 @@
+// Phase E1: small line icons for the scoring pad. Always decorative (the words beside them carry the meaning).
+type P = { size?: number };
+const base = (size: number) => ({ width: size, height: size, viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: 2, strokeLinecap: "round" as const, strokeLinejoin: "round" as const, "aria-hidden": true, focusable: false });
+
+export const IcBack = ({ size = 22 }: P) => <svg {...base(size)}><path d="M15 5l-7 7 7 7" /></svg>;
+export const IcHistory = ({ size = 20 }: P) => <svg {...base(size)}><path d="M3 12a9 9 0 1 0 3-6.7L3 8" /><path d="M3 3v5h5M12 7v5l3 2" /></svg>;
+export const IcCard = ({ size = 20 }: P) => <svg {...base(size)}><path d="M5 20V10M12 20V4M19 20v-7" /></svg>;
+export const IcHelp = ({ size = 20 }: P) => <svg {...base(size)}><circle cx="12" cy="12" r="9" /><path d="M9.5 9.5a2.5 2.5 0 1 1 3.5 2.3c-.7.4-1 .9-1 1.7M12 17v.5" /></svg>;
+export const IcUndo = ({ size = 22 }: P) => <svg {...base(size)}><path d="M9 14L4 9l5-5" /><path d="M4 9h10a6 6 0 0 1 0 12h-3" /></svg>;
+export const IcClock = ({ size = 14 }: P) => <svg {...base(size)}><circle cx="12" cy="12" r="9" /><path d="M12 7v5l3 2" /></svg>;
+export const IcAlert = ({ size = 18 }: P) => <svg {...base(size)}><path d="M12 3l10 18H2L12 3z" /><path d="M12 10v5M12 18v.5" /></svg>;
+export const IcCheck = ({ size = 18 }: P) => <svg {...base(size)}><path d="M5 13l4 4L19 7" /></svg>;
+export const IcZap = ({ size = 18 }: P) => <svg {...base(size)}><path d="M13 2L4 14h7l-1 8 9-12h-7l1-8z" /></svg>;
+export const IcStar = ({ size = 18 }: P) => <svg {...base(size)}><path d="M12 3l2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1L3.2 9.5l6.1-.9L12 3z" /></svg>;
+export const IcBowl = ({ size = 18 }: P) => <svg {...base(size)}><circle cx="12" cy="12" r="9" /><circle cx="12" cy="12" r="4" /><circle cx="12" cy="12" r=".6" /></svg>;
+export const IcOffline = ({ size = 18 }: P) => <svg {...base(size)}><path d="M3 3l18 18M8.5 8.5a5 5 0 0 0-1.5 3.5M5 5a9 9 0 0 0-2 7M15.5 8.5a5 5 0 0 1 1.5 3.5M19 5a9 9 0 0 1 2 7" /><circle cx="12" cy="12" r="1.5" /></svg>;
+export const IcRefresh = ({ size = 18 }: P) => <svg {...base(size)}><path d="M20 11a8 8 0 0 0-14-4L4 9" /><path d="M4 4v5h5M4 13a8 8 0 0 0 14 4l2-2M20 20v-5h-5" /></svg>;
+export const IcMore = ({ size = 20 }: P) => <svg {...base(size)}><circle cx="12" cy="5" r="1.4" /><circle cx="12" cy="12" r="1.4" /><circle cx="12" cy="19" r="1.4" /></svg>;
+export const IcSwap = ({ size = 20 }: P) => <svg {...base(size)}><path d="M7 4L3 8l4 4M3 8h14M17 20l4-4-4-4M21 16H7" /></svg>;
+export const IcPause = ({ size = 20 }: P) => <svg {...base(size)}><path d="M8 5v14M16 5v14" /></svg>;
+export const IcPlay = ({ size = 20 }: P) => <svg {...base(size)}><path d="M7 4l13 8-13 8V4z" /></svg>;
+export const IcPlus = ({ size = 20 }: P) => <svg {...base(size)}><path d="M12 5v14M5 12h14" /></svg>;
+export const IcUsers = ({ size = 20 }: P) => <svg {...base(size)}><circle cx="9" cy="8" r="3.5" /><path d="M2.5 20c0-3.5 2.9-6 6.5-6s6.5 2.5 6.5 6" /><circle cx="17" cy="9" r="2.5" /><path d="M17 14c2.7 0 4.5 1.9 4.5 4.5" /></svg>;
+export const IcUserPlus = ({ size = 20 }: P) => <svg {...base(size)}><circle cx="9" cy="8" r="3.5" /><path d="M2.5 20c0-3.5 2.9-6 6.5-6s6.5 2.5 6.5 6M19 8v6M16 11h6" /></svg>;
+export const IcFlag = ({ size = 20 }: P) => <svg {...base(size)}><path d="M5 21V4M5 4h12l-2 4 2 4H5" /></svg>;
+export const IcTimer = ({ size = 20 }: P) => <svg {...base(size)}><circle cx="12" cy="13" r="8" /><path d="M12 9v4l2 2M9 2h6" /></svg>;
+export const IcGauge = ({ size = 20 }: P) => <svg {...base(size)}><path d="M4 18a8 8 0 1 1 16 0M12 18l4-6" /></svg>;
+export const IcList = ({ size = 20 }: P) => <svg {...base(size)}><path d="M9 6h11M9 12h11M9 18h11M4 6h.5M4 12h.5M4 18h.5" /></svg>;
+export const IcEdit = ({ size = 20 }: P) => <svg {...base(size)}><path d="M4 20l4-1 11-11-3-3L5 16l-1 4z" /></svg>;
+export const IcShield = ({ size = 20 }: P) => <svg {...base(size)}><path d="M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6l8-3z" /></svg>;
+export const IcTarget = ({ size = 20 }: P) => <svg {...base(size)}><circle cx="12" cy="12" r="9" /><circle cx="12" cy="12" r="5" /><circle cx="12" cy="12" r="1" /></svg>;
+export const IcDoor = ({ size = 20 }: P) => <svg {...base(size)}><path d="M14 4h5v16h-5M10 8l-4 4 4 4M6 12h10" /></svg>;
+export const IcStop = ({ size = 20 }: P) => <svg {...base(size)}><rect x="5" y="5" width="14" height="14" rx="3" /></svg>;
+export const IcBook = ({ size = 20 }: P) => <svg {...base(size)}><path d="M4 5a2 2 0 0 1 2-2h13v16H6a2 2 0 0 0-2 2V5zM4 19a2 2 0 0 1 2-2h13" /></svg>;
+export const IcLock = ({ size = 20 }: P) => <svg {...base(size)}><rect x="5" y="11" width="14" height="10" rx="2" /><path d="M8 11V8a4 4 0 0 1 8 0v3" /></svg>;
+export const IcPhone = ({ size = 20 }: P) => <svg {...base(size)}><rect x="7" y="2" width="10" height="20" rx="2.5" /><path d="M11 18h2" /></svg>;
+export const IcBat = ({ size = 20 }: P) => <svg {...base(size)}><path d="M14 4l6 6-9 9-3 1 1-3 5-13z" /><path d="M5 19l-2 2" /></svg>;

@@ -1,34 +1,33 @@
 import type { Metadata } from "next";
-import Link from "next/link";
+import CnNumbers, { NumberMap } from "@/components/CnNumbers";
 import Frame from "@/components/Frame";
-import Shirt from "@/components/Shirt";
-import { listApprovedMembers, requireAdmin } from "@/lib/community";
+import { listAllApprovedMembers } from "@/lib/b3Data";
+import { requireAdmin } from "@/lib/community";
 import { requireAcceptedUser } from "@/lib/session";
 import { COMMUNITY_MEMBER_CAP } from "@/lib/validation";
+import "@/components/cn.css";
 
 export const metadata: Metadata = { title: "Player numbers" };
 
 export default async function NumbersPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const user = await requireAcceptedUser();
-  await requireAdmin(id, user.id);
-  const members = (await listApprovedMembers(id)).sort((a, b) => (a.player_number ?? 0) - (b.player_number ?? 0));
+  const { community } = await requireAdmin(id, user.id);
+  const members = await listAllApprovedMembers(id);
+  const used = members.flatMap((m) => (m.player_number === null ? [] : [m.player_number]));
   return (
-    <Frame communityId={id} title="Player numbers" back={`/c/${id}/community`}>
-      <div className="stack">
-        <div className="banner green">No conflicts. Every number belongs to one person, because numbers are first come, first served.</div>
-        <section className="card list">
-          <b style={{ paddingBottom: 6 }}>All numbers in use ({members.length} of {COMMUNITY_MEMBER_CAP})</b>
-          {members.map((m) => (
-            <Link key={m.user_id} href={`/c/${id}/members/${m.user_id}`} className="item">
-              <Shirt number={m.player_number} size="small" />
-              <span className="t grow"><b>{m.name}</b></span>
-              <span aria-hidden="true">›</span>
-            </Link>
-          ))}
-        </section>
-        <p className="muted small" style={{ margin: "0 2px", lineHeight: 1.5 }}>If two people ever argue about a number, tap a person and ask them to choose a new one. Past matches keep the number used at the time.</p>
-      </div>
+    <Frame
+      communityId={id}
+      title="Player numbers"
+      back={`/c/${id}/community`}
+      subtitle={<small className="muted">{used.length} of {COMMUNITY_MEMBER_CAP} numbers in use</small>}
+      panel={<NumberMap used={used} />}
+    >
+      <CnNumbers
+        communityId={id}
+        communityName={community.name}
+        members={members.map((m) => ({ user_id: m.user_id, name: m.name, player_number: m.player_number }))}
+      />
     </Frame>
   );
 }

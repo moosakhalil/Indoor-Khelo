@@ -3,7 +3,14 @@ import { redirect } from "next/navigation";
 import { listMyCommunities } from "@/lib/community";
 import { requireAcceptedUser } from "@/lib/session";
 
-// Sends you to the right place: your last community, the number step, the waiting screen, or create/join.
+// Sends you to the right place. The rules, in order (written down for review in Phase G1; behaviour unchanged):
+//   1. not signed in                 -> / (requireAcceptedUser, via requireUser)
+//   2. signed in, terms not accepted -> /terms
+//   3. a ready community (approved with a player number): the last one opened on this phone (cookie ik_last), else the first -> /c/{id}
+//   4. approved but no player number -> /c/{id}/number
+//   5. request still waiting         -> /c/{id}/waiting
+//   6. in no community               -> /choose
+// While this runs, loading.tsx shows the branded loading screen instead of a blank page.
 export default async function HomeRouter() {
   const user = await requireAcceptedUser();
   const mine = await listMyCommunities(user.id);

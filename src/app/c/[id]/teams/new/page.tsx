@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Frame from "@/components/Frame";
-import { TeamForm } from "@/components/Forms3";
+import TeamEditor from "@/components/TeamEditor";
 import { listApprovedMembers, requireMember } from "@/lib/community";
 import { requireAcceptedUser } from "@/lib/session";
 
@@ -13,7 +13,7 @@ export default async function NewTeamPage({ params }: { params: Promise<{ id: st
   const members = await listApprovedMembers(id);
   return (
     <Frame communityId={id} title="New team" back={`/c/${id}/teams`}>
-      <TeamForm mode="create" communityId={id} members={members} />
+      <TeamEditor mode="create" communityId={id} members={members} />
     </Frame>
   );
 }

@@ -1,0 +1,48 @@
+/* Phase D4 (UI redesign): the PDF actions card (View, Download, Share). Every class starts with pd-. Flat colour, no blur. */
+
+.pd-icon { flex: 0 0 auto; }
+.pd-top { display: flex; gap: 12px; align-items: flex-start; }
+.pd-pick { flex: 1; min-width: 0; display: grid; gap: 8px; }
+
+/* the little page preview: drawn with CSS, no image; Full shows a second page behind it */
+.pd-prev { position: relative; flex: 0 0 auto; width: 54px; height: 70px; margin: 4px 6px 0 0; }
+.pd-prev-page { position: absolute; inset: 0; background: #fff; border-radius: 4px; padding: 5px; display: grid; align-content: start; gap: 3px; box-shadow: 0 1px 0 rgba(0, 0, 0, 0.25); }
+.pd-prev.full::before, .pd-prev.full::after { content: ""; position: absolute; inset: 0; background: #e9ecf3; border-radius: 4px; }
+.pd-prev.full::before { transform: translate(5px, 5px); }
+.pd-prev.full::after { transform: translate(2.5px, 2.5px); background: #f4f6fa; }
+.pd-prev-page { z-index: 1; }
+.pd-prev-bar { height: 6px; border-radius: 2px; background: var(--night); }
+.pd-prev-badges { display: flex; gap: 3px; }
+.pd-prev-badges i { width: 9px; height: 9px; border-radius: 2.5px; background: #5aa9ff; }
+.pd-prev-badges i + i { background: #ffb547; }
+.pd-prev-gold { height: 5px; border-radius: 2px; background: var(--gold); }
+.pd-prev-line { height: 2.5px; border-radius: 2px; background: #c9d0e2; }
+.pd-prev-line.short { width: 70%; }
+
+/* Short / Full as a segmented control */
+.pd-seg { display: grid; grid-template-columns: 1fr 1fr; padding: 3px; gap: 3px; border-radius: 14px; background: var(--s0); border: 1px solid var(--line); }
+.pd-seg button { min-height: 44px; border-radius: 11px; border: 1.5px solid transparent; background: transparent; color: var(--mute); font-weight: 700; font-size: 0.95rem; cursor: pointer; }
+.pd-seg button[aria-pressed="true"] { background: var(--s3); color: var(--white); border-color: var(--gold); }
+.pd-desc { margin: 0; color: var(--mute); font-size: 0.86rem; line-height: 1.45; }
+
+/* View, Download and Share are the same size */
+.pd-two { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.pd-btn { display: flex; align-items: center; justify-content: center; gap: 8px; min-height: 48px; padding: 0 14px; border-radius: 14px; border: 1.5px solid var(--line); background: var(--s3); color: var(--white); font: inherit; font-weight: 700; text-align: center; cursor: pointer; }
+.pd-btn[aria-disabled="true"] { opacity: 0.5; cursor: not-allowed; }
+.pd-btn.gold { background: var(--gold); border-color: var(--gold); color: var(--night); width: 100%; }
+.pd-btn.gold[aria-busy="true"] { opacity: 0.8; cursor: progress; }
+.pd-btn.green { background: var(--green); border-color: var(--green); color: var(--night); width: 100%; }
+.pd-btn.small { min-height: 44px; font-size: 0.9rem; width: auto; padding: 0 16px; }
+.pd-spin { animation: pd-turn 0.9s linear infinite; }
+@keyframes pd-turn { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) { .pd-spin { animation: none; } }
+
+/* messages: an icon, the words, and the next step */
+.pd-note { display: flex; align-items: flex-start; gap: 10px; padding: 10px 14px; border-radius: 12px; border: 1px solid var(--line); background: var(--card2); font-weight: 600; font-size: 0.92rem; line-height: 1.45; }
+.pd-note > .pd-icon { margin-top: 2px; }
+.pd-note-body { min-width: 0; display: grid; gap: 10px; justify-items: start; }
+.pd-note-body p { margin: 0; overflow-wrap: anywhere; }
+.pd-note.ok { background: rgba(47, 191, 113, 0.14); border-color: var(--green); color: #9be8bc; }
+.pd-note.red { background: rgba(229, 72, 77, 0.16); border-color: var(--red); color: #ffb3b6; }
+.pd-note.quiet { background: var(--card2); border-color: var(--line); color: var(--white); }
+.pd-slow { margin: 0; color: var(--mute); font-size: 0.84rem; }

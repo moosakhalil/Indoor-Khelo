@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
-import { isUuid, getMembership } from "@/lib/community";
+import { isUuid, getCommunity, getMembership } from "@/lib/community";
 import { getMatch } from "@/lib/matches";
+import { getOrigin } from "@/lib/origin";
+import { shareTokenOf } from "@/lib/reports";
 import { pdfResponse } from "@/lib/reportPdfResponse";
 import { getSessionUser } from "@/lib/session";
 import { getZone } from "@/lib/zone";
@@ -20,8 +22,10 @@ export async function GET(req: Request, ctx: { params: Promise<{ matchId: string
   if (!match) return NextResponse.json({ error: "not_found" }, { status: 404 });
   if (match.status !== "completed" && match.status !== "abandoned") return NextResponse.json({ error: "not_finished" }, { status: 409 });
   try {
+    // the header names the community; the QR box is printed only while the public share link is on
+    const [community, token, origin] = await Promise.all([getCommunity(communityId), shareTokenOf(communityId, matchId), getOrigin()]);
     return await pdfResponse(
-      { matchId, side1: match.side1_name, side2: match.side2_name, overs: match.overs, when: match.scheduled_at, venue: match.venue, createdBy: match.created_by_name },
+      { matchId, side1: match.side1_name, side2: match.side2_name, overs: match.overs, when: match.scheduled_at, venue: match.venue, createdBy: match.created_by_name, communityName: community?.name ?? null, reportUrl: token ? `${origin}/r/${token}` : null },
       { full: url.searchParams.get("full") === "1", download: url.searchParams.get("download") === "1", tz: await getZone(), cache: "private" },
     );
   } catch (err) {

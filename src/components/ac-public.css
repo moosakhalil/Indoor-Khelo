@@ -1,0 +1,97 @@
+/* Phase G3 (UI redesign): the public shareable profile and its "link not working" page. Every class starts with ac-. Flat colour only. */
+
+.ac-ic { flex: 0 0 auto; }
+.app.ac-pub-page { max-width: 480px; padding-bottom: max(28px, env(safe-area-inset-bottom, 0px)); }
+.ac-pub-bar { display: flex; align-items: center; gap: 10px; }
+.ac-pub-brand { display: inline-flex; align-items: center; gap: 8px; font-weight: 700; flex: 1; min-width: 0; min-height: 44px; }
+.ac-pub-brand img { border-radius: 8px; }
+.ac-pub-brand b { color: var(--gold); font-weight: 800; }
+.ac-pub-tag { display: inline-flex; align-items: center; gap: 6px; min-height: 36px; padding: 0 12px; border-radius: 999px; border: 1px solid var(--line); background: var(--s3); color: #c9d1e6; font-size: 0.8rem; font-weight: 600; }
+.ac-pub-open { display: none; align-items: center; justify-content: center; min-height: 44px; padding: 0 16px; border-radius: 12px; background: var(--gold); color: var(--night); font-weight: 800; font-size: 0.9rem; }
+
+.ac-pub-grid { display: flex; flex-direction: column; gap: 14px; }
+.ac-pub-side, .ac-pub-main { display: flex; flex-direction: column; gap: 12px; min-width: 0; }
+
+/* ---------- the shareable player card ---------- */
+.ac-pcard { display: flex; align-items: center; gap: 16px; background: var(--s2); border: 1px solid var(--line); border-radius: 22px; padding: 18px 16px; }
+.ac-pcard .shirt { flex: 0 0 auto; }
+.ac-pcard-t { min-width: 0; flex: 1; }
+.ac-pcard-t h1 { font-size: 1.6rem; line-height: 1.1; overflow-wrap: anywhere; letter-spacing: -0.01em; }
+.ac-pcard-t p { margin: 4px 0 0; color: var(--mute); font-weight: 600; font-size: 0.88rem; }
+.ac-pchips { list-style: none; margin: 10px 0 0; padding: 0; display: flex; flex-wrap: wrap; gap: 6px; }
+.ac-pchip { display: inline-flex; align-items: center; min-height: 30px; padding: 3px 12px; border-radius: 999px; border: 1px solid var(--line); background: var(--s3); font-size: 0.8rem; font-weight: 600; }
+.ac-pchip.role { border-color: var(--gold); color: var(--gold); }
+.ac-pchip.quiet { color: var(--mute); border-style: dashed; background: transparent; }
+
+/* ---------- boxes ---------- */
+.ac-box { background: var(--card); border: 1px solid var(--line); border-radius: 18px; padding: 14px; min-width: 0; }
+.ac-h { font-size: 1rem; font-weight: 800; }
+.ac-drows { margin-top: 4px; }
+.ac-drow { display: flex; justify-content: space-between; align-items: center; gap: 12px; min-height: 48px; padding: 8px 0; border-bottom: 1px solid var(--line); }
+.ac-drow:last-child { border-bottom: 0; }
+.ac-drow span { color: var(--mute); font-size: 0.9rem; }
+.ac-drow b { text-align: right; overflow-wrap: anywhere; }
+.ac-drow b.unset { color: var(--mute); font-weight: 500; }
+.ac-quiet { margin: 8px 0 0; color: var(--mute); font-size: 0.88rem; }
+
+/* ---------- tiles in tabular numerals ---------- */
+.ac-tiles { display: grid; gap: 8px; margin-top: 10px; }
+.ac-tiles.c3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.ac-tiles.c2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.ac-tile { background: var(--card2); border: 1px solid var(--line); border-radius: 14px; padding: 10px 8px; display: flex; flex-direction: column; gap: 2px; min-width: 0; text-align: center; align-items: center; justify-content: center; }
+.ac-tile b { font-family: var(--font-num); font-size: 1.5rem; line-height: 1.1; font-weight: 800; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+.ac-tl { font-size: 0.72rem; line-height: 1.2; color: var(--mute); font-weight: 600; }
+.ac-tile small { font-size: 0.72rem; line-height: 1.2; color: var(--mute); }
+.ac-tile.hi { border-color: var(--gold); }
+.ac-tile.hi b { color: var(--gold); }
+.span > .ac-tiles { margin-top: 0; }
+.span > .ac-tiles .ac-tile { padding: 14px 10px; align-items: flex-start; text-align: left; }
+.span > .ac-tiles .ac-tile b { font-size: 1.9rem; order: 2; }
+.span > .ac-tiles .ac-tl { order: 1; }
+.span > .ac-tiles .ac-tile small { order: 3; }
+
+/* ---------- empty state ---------- */
+.ac-empty { background: transparent; border: 1.5px dashed var(--line); border-radius: 18px; padding: 24px 16px; text-align: center; display: flex; flex-direction: column; align-items: center; gap: 6px; }
+.ac-empty b { font-size: 1.05rem; }
+.ac-empty p { margin: 0; color: var(--mute); font-size: 0.88rem; line-height: 1.5; max-width: 38ch; }
+.ac-empty-ic { width: 56px; height: 56px; border-radius: 16px; background: var(--s3); color: var(--gold); display: inline-flex; align-items: center; justify-content: center; margin-bottom: 4px; }
+
+/* ---------- last innings legend ---------- */
+.ac-legend { list-style: none; margin: 12px 0 0; padding: 0; display: flex; flex-wrap: wrap; gap: 6px 16px; color: var(--mute); font-size: 0.78rem; font-weight: 600; }
+.ac-legend li { display: inline-flex; align-items: center; gap: 6px; }
+.ac-legend b { color: var(--white); }
+.ac-legend .sw { width: 12px; height: 12px; border-radius: 4px; background: var(--card2); border: 1px solid var(--mute); display: inline-block; }
+.ac-legend .sw.big { background: var(--gold); border-color: var(--gold); }
+.ac-legend .sw.duck { background: transparent; border: 2px dashed var(--red); }
+
+/* ---------- call to action and the "shared by the player" note ---------- */
+.ac-cta { background: #20233a; border: 1px solid #6b5a2c; border-radius: 18px; padding: 16px; display: flex; flex-direction: column; gap: 10px; }
+.ac-cta h2 { font-size: 1.05rem; font-weight: 800; }
+.ac-cta p { margin: 0; color: #b4bfd8; font-size: 0.88rem; line-height: 1.45; }
+.ac-cta .btn { margin-top: 2px; }
+.ac-shared { display: flex; align-items: flex-start; gap: 10px; background: rgba(90, 169, 255, 0.1); border: 1px solid rgba(90, 169, 255, 0.45); border-radius: 16px; padding: 12px 14px; font-size: 0.85rem; line-height: 1.5; color: #cfe4ff; }
+.ac-shared b { display: block; color: var(--white); }
+.ac-shared .ac-ic { margin-top: 2px; }
+
+/* ---------- link not working ---------- */
+.ac-dead { margin: auto 0; padding: 28px 0; display: flex; justify-content: center; }
+.ac-dead-card { width: 100%; background: var(--s2); border: 1px solid var(--line); border-radius: 24px; padding: 28px 20px; text-align: center; display: flex; flex-direction: column; align-items: center; gap: 12px; }
+.ac-dead-ic { width: 64px; height: 64px; border-radius: 20px; background: var(--s3); color: var(--gold); display: inline-flex; align-items: center; justify-content: center; }
+.ac-dead-card h1 { font-size: 1.6rem; font-weight: 800; }
+.ac-dead-card p { margin: 0; color: #b4bfd8; line-height: 1.5; max-width: 34ch; }
+.ac-dead-card .btn { margin-top: 6px; }
+.ac-dead-card small { color: var(--mute); font-size: 0.78rem; }
+
+/* ---------- adaptive: stacked on a phone, two columns on tablet, the card sticks left on desktop ---------- */
+@media (min-width: 640px) {
+  .app.ac-pub-page { max-width: 760px; }
+  .ac-pub-open { display: inline-flex; }
+  .ac-pub-main { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; align-items: start; }
+  .ac-pub-main > .span, .ac-pub-main > .ac-cta, .ac-pub-main > .ac-shared { grid-column: 1 / -1; }
+}
+@media (min-width: 1024px) {
+  .app.ac-pub-page { max-width: 1100px; }
+  .ac-pub-grid { display: grid; grid-template-columns: 340px minmax(0, 1fr); gap: 20px; align-items: start; }
+  .ac-pub-side { position: sticky; top: 76px; }
+  .ac-pcard { flex-direction: column; align-items: flex-start; text-align: left; }
+}
