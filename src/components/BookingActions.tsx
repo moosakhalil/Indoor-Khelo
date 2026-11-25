@@ -11,6 +11,7 @@ import { PaymentForm, type PayHint } from "@/components/Forms7";
 import PbIcon from "@/components/PbIcons";
 import Shirt from "@/components/Shirt";
 import { useSnackbar } from "@/components/Snackbar";
+import { ownerReason } from "@/lib/ownerRule";
 import { BOOKING_LABEL, money, type BookingStatus } from "@/lib/payments";
 import "./pb.css";
 
@@ -158,6 +159,8 @@ export function RemindControl({ communityId, bookingId, venue, share, balance, d
 export type RecordRowData = {
   id: string; payerName: string; payerHref: string | null; number: number | null; guest: boolean; kind: "payment" | "refund"; amount: number; methodLabel: string; paidOn: string; reference: string;
   recordedBy: string; changedBy: string | null; checkedBy: string | null;
+  /** false: only the person who recorded it, or an Admin, may edit or remove it (lib/ownerRule.ts). Anyone may still mark it checked. Missing means yes. */
+  canChange?: boolean;
 };
 
 export function PaymentRecordRow({ communityId, bookingId, base, r }: { communityId: string; bookingId: string; base: string; r: RecordRowData }) {
@@ -177,10 +180,11 @@ export function PaymentRecordRow({ communityId, bookingId, base, r }: { communit
     setHidden(true);
     snack.undoable({ message: `${r.kind === "refund" ? "Refund" : "Payment"} of ${money(r.amount)} removed.`, ms: 8000, commit: doRemove, onUndo: () => setHidden(false) });
   };
+  const mine = r.canChange !== false;
   const items: ActionItem[] = [
-    { label: "Edit record", href: `${base}/pay/${r.id}` },
+    ...(mine ? [{ label: "Edit record", href: `${base}/pay/${r.id}` }] : []),
     { label: r.checkedBy ? "Mark not checked" : "Mark checked", onSelect: () => startTransition(() => { void verifyPaymentAction(fd({ on: r.checkedBy ? "0" : "1" })); }) },
-    { label: "Remove record", danger: true, onSelect: remove },
+    ...(mine ? [{ label: "Remove record", danger: true, onSelect: remove }] : []),
   ];
   if (hidden) return null;
   const refund = r.kind === "refund";
@@ -244,13 +248,15 @@ export function StatusControl({ communityId, bookingId, status }: { communityId:
   );
 }
 
-export function DeleteBooking({ communityId, bookingId, venue, when }: { communityId: string; bookingId: string; venue: string; when: string }) {
+export function DeleteBooking({ communityId, bookingId, venue, when, canDelete = true, addedBy = null }: { communityId: string; bookingId: string; venue: string; when: string; canDelete?: boolean; addedBy?: string | null }) {
   const [open, setOpen] = useState(false);
   const go = () => {
     const fd = new FormData();
     fd.set("communityId", communityId); fd.set("bookingId", bookingId);
     startTransition(() => { void deleteBookingAction(fd); });
   };
+  // Only the person who added the booking, or an Admin, can delete it (lib/ownerRule.ts).
+  if (!canDelete) return <p className="pb-lock"><PbIcon name="lock" size={16} />{ownerReason("delete", addedBy)}</p>;
   return (
     <>
       <button type="button" className="btn red small pb-del" onClick={() => setOpen(true)}><PbIcon name="trash" size={16} />Delete booking</button>

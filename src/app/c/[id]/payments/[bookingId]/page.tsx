@@ -13,6 +13,7 @@ import { getBooking, linkedMatches, listHistory, listPayments, listSharing, mone
 import { describeHistory } from "@/lib/bookingText";
 import { listApprovedMembers, requireMember } from "@/lib/community";
 import { formatWhen } from "@/lib/matchRules";
+import { mayManage } from "@/lib/ownerRule";
 import { METHODS, money, netFor, surplus } from "@/lib/payments";
 import { payerKey, personLine, refundHolders, remindPlan, reminderWait, splitTeams } from "@/lib/pbBooking";
 import { requireAcceptedUser } from "@/lib/session";
@@ -25,6 +26,7 @@ type Q = { created?: string; saved?: string; status?: string; shared?: string; l
 // Refusals (red) and plain notices (not red). Same wording as before.
 const REFUSALS: Record<string, string> = {
   bad_state: "That cannot be done in this booking's current state.", forbidden: "Only members of this community can do that.", not_found: "That could not be found.",
+  not_owner: "Only the person who added this, or an Admin, can do that.",
 };
 const NOTICES: Record<string, string> = { nobody: "Everyone's suggested share is covered, so there is nobody to remind." };
 
@@ -33,7 +35,8 @@ export default async function BookingPage({ params, searchParams }: { params: Pr
   const { id, bookingId } = await params;
   const q = await searchParams;
   const user = await requireAcceptedUser();
-  await requireMember(id, user.id);
+  const { membership } = await requireMember(id, user.id);
+  const me2 = { id: user.id, admin: membership.role === "admin" };   // delete the booking / change a payment: who added it, or an Admin (lib/ownerRule.ts)
   const b = await getBooking(id, bookingId);
   if (!b) notFound();
   const [sharing, payments, history, matches, members, tz] = await Promise.all([listSharing(bookingId), listPayments(bookingId), listHistory(bookingId), linkedMatches(bookingId), listApprovedMembers(id), getZone()]);
@@ -74,6 +77,7 @@ export default async function BookingPage({ params, searchParams }: { params: Pr
     id: p.id, payerName: p.payer_user_id ? memberName.get(p.payer_user_id) ?? p.payer_name : p.payer_name, payerHref: p.payer_user_id ? `/c/${id}/players/${p.payer_user_id}` : null,
     number: p.payer_user_id ? numberOf.get(p.payer_user_id) ?? null : null, guest: !p.payer_user_id, kind: p.kind, amount: p.amount, methodLabel: method(p.method), paidOn: p.paid_on, reference: p.reference,
     recordedBy: p.created_by_name ?? "—", changedBy: p.changed_by_name, checkedBy: p.verified_at ? p.verified_by_name ?? "a member" : null,
+    canChange: mayManage(me2, p.created_by),
   }));
 
   const actions = !done ? (
@@ -231,7 +235,7 @@ export default async function BookingPage({ params, searchParams }: { params: Pr
             {payments.length === 0 ? (
               <>
                 <p className="muted small" style={{ margin: "0 0 8px" }}>Only a booking with no payment records can be deleted. Otherwise cancel it, and the records are kept.</p>
-                <DeleteBooking communityId={id} bookingId={bookingId} venue={b.venue_name} when={when} />
+                <DeleteBooking communityId={id} bookingId={bookingId} venue={b.venue_name} when={when} canDelete={mayManage(me2, b.created_by)} addedBy={b.created_by_name} />
               </>
             ) : (
               <p className="pb-lock"><PbIcon name="lock" size={16} />A booking with payment records cannot be deleted. Cancel it instead; the records are kept.</p>

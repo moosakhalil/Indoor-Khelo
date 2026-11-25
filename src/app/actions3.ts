@@ -112,5 +112,6 @@ export async function deleteTeamAction(formData: FormData) {
   const outcome = await deleteTeam(user.id, communityId, teamId);
   revalidatePath(`/c/${communityId}/teams`, "layout");
   // A team with matches is protected; send the person back to the team, where the reason is shown.
-  redirect(outcome === "has_matches" ? `/c/${communityId}/teams/${teamId}/edit` : `/c/${communityId}/teams`);
+  // Not the person who added it (and not an Admin): nothing was deleted, so stay on the team (the page does not offer the button to them).
+  redirect(outcome === "has_matches" ? `/c/${communityId}/teams/${teamId}/edit` : outcome === "not_owner" ? `/c/${communityId}/teams/${teamId}` : `/c/${communityId}/teams`);
 }

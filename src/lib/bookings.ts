@@ -3,21 +3,23 @@
 import type { PoolClient } from "pg";
 import { isUniqueViolation, one, query, tx } from "@/lib/db";
 import { isUuid } from "@/lib/community";
+import { isAdminMember, mayManage } from "@/lib/ownerRule";
 import {
   BOOKING_LABEL, memberStatus, money, netFor, suggestedShare, summarize, type BookingInput, type BookingStatus, type Contribution, type PaymentInput, type VenueInput,
 } from "@/lib/payments";
 
 /* ---------- shapes ---------- */
-export type VenueRow = { id: string; name: string; address: string; contact: string; created_by_name: string | null; changed_by_name: string | null; updated_at: Date; booking_count: number };
+// `created_by` is who added the record: they, or an Admin, may delete it (venue, booking) or change / remove it (payment), see lib/ownerRule.ts.
+export type VenueRow = { id: string; name: string; address: string; contact: string; created_by: string | null; created_by_name: string | null; changed_by_name: string | null; updated_at: Date; booking_count: number };
 export type BookingRow = {
   id: string; community_id: string; venue_id: string; venue_name: string; venue_address: string; venue_contact: string; starts_at: Date; duration_minutes: number; total_cost: number;
-  reference: string; notes: string; status: BookingStatus; created_by_name: string | null; changed_by_name: string | null; created_at: Date; updated_at: Date; last_reminder_at: Date | null;
+  reference: string; notes: string; status: BookingStatus; created_by: string | null; created_by_name: string | null; changed_by_name: string | null; created_at: Date; updated_at: Date; last_reminder_at: Date | null;
   contributed: number; member_count: number;
 };
 export type SharingRow = { id: string; user_id: string | null; name: string; guest: boolean; player_number: number | null };
 export type PaymentRow = {
   id: string; booking_id: string; payer_user_id: string | null; payer_name: string; kind: "payment" | "refund"; amount: number; paid_on: string; method: string; reference: string;
-  verified_by_name: string | null; verified_at: Date | null; created_by_name: string | null; changed_by_name: string | null; created_at: Date; updated_at: Date;
+  verified_by_name: string | null; verified_at: Date | null; created_by: string | null; created_by_name: string | null; changed_by_name: string | null; created_at: Date; updated_at: Date;
 };
 export type HistoryRow = { id: number; actor_name: string; action: string; details: Record<string, unknown>; created_at: Date };
 
@@ -38,11 +40,11 @@ async function alert(c: PoolClient, communityId: string, bookingId: string, kind
 }
 
 /* ---------- venues ---------- */
-export type VenueOutcome = "ok" | "forbidden" | "not_found" | "name_taken" | "in_use";
+export type VenueOutcome = "ok" | "forbidden" | "not_found" | "name_taken" | "in_use" | "not_owner";
 
 export async function listVenues(communityId: string): Promise<VenueRow[]> {
   return query<VenueRow>(
-    `select v.id, v.name, v.address, v.contact, ab.name as created_by_name, cb.name as changed_by_name, v.updated_at,
+    `select v.id, v.name, v.address, v.contact, v.created_by, ab.name as created_by_name, cb.name as changed_by_name, v.updated_at,
             (select count(*)::int from booking b where b.venue_id = v.id) as booking_count
        from venue v left join app_user ab on ab.id = v.created_by left join app_user cb on cb.id = v.changed_by
       where v.community_id = $1 order by lower(v.name)`, [communityId]);
@@ -72,6 +74,10 @@ export async function updateVenue(userId: string, communityId: string, id: strin
 export async function deleteVenue(userId: string, communityId: string, id: string): Promise<VenueOutcome> {
   return tx(async (c) => {
     if (!(await isApproved(c, communityId, userId))) return "forbidden";
+    // Only the person who added the venue, or an Admin, can delete it (ownerRule.ts).
+    const own = await c.query<{ created_by: string | null }>("select created_by from venue where id = $1 and community_id = $2", [id, communityId]);
+    if (!own.rows.length) return "not_found";
+    if (!mayManage({ id: userId, admin: await isAdminMember(c, communityId, userId) }, own.rows[0]!.created_by)) return "not_owner";
     const used = await c.query("select 1 from booking where venue_id = $1 limit 1", [id]);
     if (used.rows.length) return "in_use";
     const r = await c.query("delete from venue where id = $1 and community_id = $2", [id, communityId]);
@@ -82,7 +88,7 @@ export async function deleteVenue(userId: string, communityId: string, id: strin
 /* ---------- bookings: reading ---------- */
 const BOOKING_SELECT = `
   select b.id, b.community_id, b.venue_id, v.name as venue_name, v.address as venue_address, v.contact as venue_contact, b.starts_at, b.duration_minutes, b.total_cost,
-         b.reference, b.notes, b.status, ab.name as created_by_name, cb.name as changed_by_name, b.created_at, b.updated_at, b.last_reminder_at,
+         b.reference, b.notes, b.status, b.created_by, ab.name as created_by_name, cb.name as changed_by_name, b.created_at, b.updated_at, b.last_reminder_at,
          coalesce((select sum(case when p.kind = 'payment' then p.amount else -p.amount end) from booking_payment p where p.booking_id = b.id), 0)::int as contributed,
          (select count(*)::int from booking_member m where m.booking_id = b.id) as member_count
     from booking b join venue v on v.id = b.venue_id
@@ -105,7 +111,7 @@ export async function listSharing(bookingId: string): Promise<SharingRow[]> {
 export async function listPayments(bookingId: string): Promise<PaymentRow[]> {
   return query<PaymentRow>(
     `select p.id, p.booking_id, p.payer_user_id, p.payer_name, p.kind, p.amount, to_char(p.paid_on, 'YYYY-MM-DD') as paid_on, p.method, p.reference,
-            vb.name as verified_by_name, p.verified_at, ab.name as created_by_name, cb.name as changed_by_name, p.created_at, p.updated_at
+            vb.name as verified_by_name, p.verified_at, p.created_by, ab.name as created_by_name, cb.name as changed_by_name, p.created_at, p.updated_at
        from booking_payment p left join app_user vb on vb.id = p.verified_by left join app_user ab on ab.id = p.created_by left join app_user cb on cb.id = p.changed_by
       where p.booking_id = $1 order by p.paid_on desc, p.created_at desc`, [bookingId]);
 }
@@ -136,7 +142,7 @@ export function moneyView(b: Pick<BookingRow, "total_cost">, sharing: SharingRow
 }
 
 /* ---------- bookings: changing ---------- */
-export type BookingOutcome = "ok" | "forbidden" | "not_found" | "bad_venue" | "bad_state" | "bad_person" | "too_soon" | "nobody" | "duplicate" | "too_much";
+export type BookingOutcome = "ok" | "forbidden" | "not_found" | "bad_venue" | "bad_state" | "bad_person" | "too_soon" | "nobody" | "duplicate" | "too_much" | "not_owner";
 
 export async function createBooking(userId: string, communityId: string, b: BookingInput): Promise<{ outcome: BookingOutcome; id?: string }> {
   return tx(async (c) => {
@@ -199,6 +205,10 @@ export async function setBookingStatus(userId: string, communityId: string, id: 
 export async function deleteBooking(userId: string, communityId: string, id: string): Promise<BookingOutcome> {
   return tx(async (c) => {
     if (!(await isApproved(c, communityId, userId))) return "forbidden";
+    // Only the person who added the booking, or an Admin, can delete it (ownerRule.ts).
+    const own = await c.query<{ created_by: string | null }>("select created_by from booking where id = $1 and community_id = $2", [id, communityId]);
+    if (!own.rows.length) return "not_found";
+    if (!mayManage({ id: userId, admin: await isAdminMember(c, communityId, userId) }, own.rows[0]!.created_by)) return "not_owner";
     const pay = await c.query("select 1 from booking_payment where booking_id = $1 limit 1", [id]);
     if (pay.rows.length) return "bad_state";   // a booking with money recorded is cancelled, never deleted, so the records stay
     const r = await c.query("delete from booking where id = $1 and community_id = $2", [id, communityId]);
@@ -301,9 +311,11 @@ export async function updatePayment(userId: string, communityId: string, booking
     if (!(await isApproved(c, communityId, userId))) return "forbidden";
     const b = await c.query("select 1 from booking where id = $1 and community_id = $2 for update", [bookingId, communityId]);
     if (!b.rows.length) return "not_found";
-    const old = await c.query<{ payer_name: string; payer_user_id: string | null; kind: string; amount: number; paid_on: string; method: string; reference: string }>(
-      "select payer_name, payer_user_id, kind, amount, to_char(paid_on, 'YYYY-MM-DD') as paid_on, method, reference from booking_payment where id = $1 and booking_id = $2", [id, bookingId]);
+    const old = await c.query<{ payer_name: string; payer_user_id: string | null; kind: string; amount: number; paid_on: string; method: string; reference: string; created_by: string | null }>(
+      "select payer_name, payer_user_id, kind, amount, to_char(paid_on, 'YYYY-MM-DD') as paid_on, method, reference, created_by from booking_payment where id = $1 and booking_id = $2", [id, bookingId]);
     if (!old.rows.length) return "not_found";
+    // Only the person who recorded the payment, or an Admin, can change it (ownerRule.ts).
+    if (!mayManage({ id: userId, admin: await isAdminMember(c, communityId, userId) }, old.rows[0]!.created_by)) return "not_owner";
     let payerName = p.payerName;
     if (p.payerUserId) {
       if (!(await isApproved(c, communityId, p.payerUserId))) return "bad_person";
@@ -336,6 +348,10 @@ export async function deletePayment(userId: string, communityId: string, booking
     if (!(await isApproved(c, communityId, userId))) return "forbidden";
     const b = await c.query("select 1 from booking where id = $1 and community_id = $2 for update", [bookingId, communityId]);
     if (!b.rows.length) return "not_found";
+    // Only the person who recorded the payment, or an Admin, can remove it (ownerRule.ts).
+    const own = await c.query<{ created_by: string | null }>("select created_by from booking_payment where id = $1 and booking_id = $2", [id, bookingId]);
+    if (!own.rows.length) return "not_found";
+    if (!mayManage({ id: userId, admin: await isAdminMember(c, communityId, userId) }, own.rows[0]!.created_by)) return "not_owner";
     const r = await c.query<{ payer_name: string; kind: string; amount: number }>("delete from booking_payment where id = $1 and booking_id = $2 returning payer_name, kind, amount", [id, bookingId]);
     if (!r.rows.length) return "not_found";
     await hist(c, bookingId, userId, "payment_removed", { payer: r.rows[0]!.payer_name, kind: r.rows[0]!.kind, amount: r.rows[0]!.amount });

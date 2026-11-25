@@ -108,7 +108,7 @@ export async function deleteBookingAction(fd: FormData) {
   const user = await requireAcceptedUser();
   const communityId = idOf(fd, "communityId"), bookingId = idOf(fd, "bookingId");
   if (!communityId || !bookingId) return;
-  const r = await deleteBooking(user.id, communityId, bookingId);
+  const r = await deleteBooking(user.id, communityId, bookingId);   // refusals (including not_owner) come back as ?e= and the booking page words them
   revalidatePath(pay(communityId), "layout");
   redirect(r === "ok" ? pay(communityId, "?deleted=1") : pay(communityId, `/${bookingId}?e=${r}`));
 }
@@ -154,9 +154,10 @@ export async function deletePaymentAction(fd: FormData) {
   const user = await requireAcceptedUser();
   const communityId = idOf(fd, "communityId"), bookingId = idOf(fd, "bookingId"), paymentId = idOf(fd, "paymentId");
   if (!communityId || !bookingId || !paymentId) return;
-  await deletePayment(user.id, communityId, bookingId, paymentId);
+  const r = await deletePayment(user.id, communityId, bookingId, paymentId);
   revalidatePath(pay(communityId), "layout");
-  redirect(pay(communityId, `/${bookingId}?removed=1#payments`));
+  // A refusal (for example not the person who recorded it, and not an Admin) is shown on the booking page, never reported as "removed".
+  redirect(pay(communityId, r === "ok" ? `/${bookingId}?removed=1#payments` : `/${bookingId}?e=${r}#payments`));
 }
 
 export async function updatePaymentAction(_prev: FormState, fd: FormData): Promise<FormState> {
@@ -169,6 +170,7 @@ export async function updatePaymentAction(_prev: FormState, fd: FormData): Promi
   if (r === "too_much") return { fieldErrors: { amount: "A refund cannot be more than that person has paid in." }, error: fixFields };
   if (r === "bad_person") return { fieldErrors: { payer: "That person is not a member of this community." }, error: fixFields };
   if (r === "not_found") return { error: "That record no longer exists." };
+  if (r === "not_owner") return { error: "Only the person who recorded this, or an Admin, can change it." };
   if (r !== "ok") return { error: "Only members of this community can change payment records." };
   revalidatePath(pay(communityId), "layout");
   redirect(pay(communityId, `/${bookingId}?saved=1#payments`));

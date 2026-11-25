@@ -24,7 +24,7 @@ export function openManage(key: keyof typeof ROW_LABEL) {
   return true;
 }
 
-export default function MdTopRight({ communityId, matchId, status, link, title, rematchLabel = "Rematch" }: { communityId: string; matchId: string; status: MatchStatus; link: string; title: string; rematchLabel?: string }) {
+export default function MdTopRight({ communityId, matchId, status, link, title, rematchLabel = "Rematch", canManage = true }: { communityId: string; matchId: string; status: MatchStatus; link: string; title: string; rematchLabel?: string; canManage?: boolean }) {
   const snack = useSnackbar();
   const base = `/c/${communityId}/matches/${matchId}`;
   const share = useCallback(async () => {
@@ -41,7 +41,7 @@ export default function MdTopRight({ communityId, matchId, status, link, title, 
     }
   }, [link, title, snack]);
 
-  const items: ActionItem[] = manageItems(status).filter((i) => i.ok).map((i) => {
+  const items: ActionItem[] = manageItems(status, canManage).filter((i) => i.ok).map((i) => {
     if (i.key === "edit") return { label: i.label, href: `${base}/edit` };
     if (i.key === "rematch") return { label: rematchLabel, href: `${base}/rematch` };
     const key = i.key as keyof typeof ROW_LABEL;

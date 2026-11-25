@@ -36,7 +36,7 @@ export function PvVenuePanel({ communityId, bookings }: { communityId: string; b
   return <section className="pv-card2 pv-bk-panel" aria-label="Bookings at this venue"><BookingsHere communityId={communityId} bookings={bookings} /></section>;
 }
 
-export function PvVenueBody({ communityId, venue: v, bookings, inUse }: { communityId: string; venue: PvVenueData; bookings: PvVenueBooking[]; inUse: boolean }) {
+export function PvVenueBody({ communityId, venue: v, bookings, inUse, canDelete = true }: { communityId: string; venue: PvVenueData; bookings: PvVenueBooking[]; inUse: boolean; canDelete?: boolean }) {
   return (
     <div className="stack">
       {inUse && <AlertBanner><b>This venue has bookings, so it cannot be deleted.</b><br /><span style={{ fontWeight: 500 }}>Another member just booked it. Cancel or delete those bookings first.</span></AlertBanner>}
@@ -49,7 +49,7 @@ export function PvVenueBody({ communityId, venue: v, bookings, inUse }: { commun
         <PvVenueForm mode="edit" communityId={communityId} venueId={v.id} venue={{ name: v.name, address: v.address, contact: v.contact }} idp="pv-ve" />
         <p className="pv-by">Added by <b>{v.created_by_name ?? "—"}</b> · Changed by <b>{v.changed_by_name ?? "—"}</b></p>
       </section>
-      <PvVenueDelete communityId={communityId} venueId={v.id} name={v.name} bookingCount={v.booking_count} />
+      <PvVenueDelete communityId={communityId} venueId={v.id} name={v.name} bookingCount={v.booking_count} canDelete={canDelete} addedBy={v.created_by_name} />
       <section className="pv-card2 pv-bk-inline" aria-label="Bookings at this venue"><BookingsHere communityId={communityId} bookings={bookings} /></section>
     </div>
   );

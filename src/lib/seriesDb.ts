@@ -4,11 +4,12 @@ import type { PoolClient } from "pg";
 import { isUniqueViolation, one, query, tx } from "@/lib/db";
 import { isUuid } from "@/lib/community";
 import { createRematch } from "@/lib/matches";
+import { isAdminMember, mayManage } from "@/lib/ownerRule";
 import { SERIES_SIDES_MAX, pointsTable, seriesStatus, sidesFit, tally, type Row, type SeriesInput, type SeriesMatch, type SeriesSide, type Status, type Tally } from "@/lib/series";
 
 export type SeriesRow = {
   id: string; community_id: string; name: string; format: "open" | "best_of"; best_of: number | null; starts_on: string | null; ends_on: string | null; notes: string;
-  status: "open" | "closed"; created_by_name: string | null; changed_by_name: string | null; created_at: Date; updated_at: Date; match_count: number;
+  status: "open" | "closed"; created_by: string | null; created_by_name: string | null; changed_by_name: string | null; created_at: Date; updated_at: Date; match_count: number;
 };
 export type SeriesMatchRow = {
   id: string; status: string; scheduled_at: Date | null; created_at: Date; overs: number; venue: string; result: { kind?: string; winner?: 1 | 2 | null; text?: string } | null;
@@ -17,7 +18,7 @@ export type SeriesMatchRow = {
 export type SeriesFull = SeriesRow & { sides: SeriesSide[]; matches: SeriesMatchRow[]; tally: Tally; status_view: Status; table: Row[] };
 
 export type SeriesOutcome =
-  | "ok" | "forbidden" | "not_found" | "name_taken" | "bad_team" | "bad_match" | "in_other_series" | "bad_state" | "not_in_series" | "side_in_use" | "sides" | "too_few";
+  | "ok" | "forbidden" | "not_found" | "name_taken" | "bad_team" | "bad_match" | "in_other_series" | "bad_state" | "not_in_series" | "side_in_use" | "sides" | "too_few" | "not_owner";
 export type SeriesResult = { outcome: SeriesOutcome; id?: string; reason?: string; ids?: string[] };
 
 const isApproved = async (c: PoolClient, communityId: string, userId: string) =>
@@ -27,7 +28,7 @@ async function audit(c: PoolClient, communityId: string, actor: string, action: 
 }
 
 const SERIES_SELECT = `
-  select s.id, s.community_id, s.name, s.format, s.best_of, to_char(s.starts_on, 'YYYY-MM-DD') as starts_on, to_char(s.ends_on, 'YYYY-MM-DD') as ends_on, s.notes, s.status,
+  select s.id, s.community_id, s.name, s.format, s.best_of, to_char(s.starts_on, 'YYYY-MM-DD') as starts_on, to_char(s.ends_on, 'YYYY-MM-DD') as ends_on, s.notes, s.status, s.created_by,
          ab.name as created_by_name, cb.name as changed_by_name, s.created_at, s.updated_at,
          (select count(*)::int from series_match m where m.series_id = s.id) as match_count
     from series s left join app_user ab on ab.id = s.created_by left join app_user cb on cb.id = s.changed_by`;
@@ -159,6 +160,10 @@ export const reopenSeries = (userId: string, communityId: string, id: string) =>
 export async function deleteSeries(userId: string, communityId: string, id: string): Promise<SeriesOutcome> {
   return tx(async (c) => {
     if (!(await isApproved(c, communityId, userId))) return "forbidden";
+    // Only the person who added the series, or an Admin, can delete it (ownerRule.ts). Its matches are kept either way.
+    const own = await c.query<{ created_by: string | null }>("select created_by from series where id = $1 and community_id = $2", [id, communityId]);
+    if (!own.rows.length) return "not_found";
+    if (!mayManage({ id: userId, admin: await isAdminMember(c, communityId, userId) }, own.rows[0]!.created_by)) return "not_owner";
     const r = await c.query("delete from series where id = $1 and community_id = $2", [id, communityId]);
     if (!r.rowCount) return "not_found";
     await audit(c, communityId, userId, "series_deleted", { series: id });

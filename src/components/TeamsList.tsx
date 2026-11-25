@@ -38,7 +38,8 @@ function TeamCard({ communityId, t }: { communityId: string; t: TeamItem }) {
     { label: "Edit team", href: `${base}/edit` },
     { label: "Edit squad", href: `${base}/squad` },
     // Delete stays red and can be tapped: with matches it explains why it is not allowed instead of failing later.
-    { label: t.matches > 0 ? `Delete team (has ${matchesText(t.matches)}, not allowed)` : "Delete team…", danger: true, onSelect: () => setAskDelete(true) },
+    // Only the person who added the team, or an Admin, is offered it (lib/ownerRule.ts).
+    ...(t.canDelete === false ? [] : [{ label: t.matches > 0 ? `Delete team (has ${matchesText(t.matches)}, not allowed)` : "Delete team…", danger: true, onSelect: () => setAskDelete(true) }]),
   ];
   return (
     <article className={`tm-card${t.mine ? " mine" : ""}`}>

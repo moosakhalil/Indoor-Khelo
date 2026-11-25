@@ -121,10 +121,12 @@ export function MdLinkCard({ link }: { link: string }) {
 
 /* ---------- manage ---------- */
 /** "Manage match": only what the status allows (no dimmed buttons). Rematch keeps its series wording; the rest is Phase C's MatchManage. */
-export function MdManageCard({ communityId, matchId, status, title, whenLabel, rematchLabel, comingCount = 0 }: {
+export function MdManageCard({ communityId, matchId, status, title, whenLabel, rematchLabel, comingCount = 0, canManage = true }: {
   communityId: string; matchId: string; status: MatchStatus; title: string; whenLabel: string; rematchLabel: string; comingCount?: number;
+  /** Cancel and delete are only offered to the person who added the match, or an Admin (lib/ownerRule.ts). */
+  canManage?: boolean;
 }) {
-  const keys = manageItems(status).filter((i) => i.ok && i.key !== "rematch").map((i) => i.key);
+  const keys = manageItems(status, canManage).filter((i) => i.ok && i.key !== "rematch").map((i) => i.key);
   return (
     <section className="md-card md-managecard" id="md-manage" aria-labelledby="md-manage-h">
       <h2 className="md-h" id="md-manage-h">Manage match</h2>
@@ -135,7 +137,7 @@ export function MdManageCard({ communityId, matchId, status, title, whenLabel, r
           <span className="cr-mgo"><IconChevron size={18} /></span>
         </Link>
       </div>
-      {keys.length > 0 && <MatchManage communityId={communityId} matchId={matchId} status={status} title={title} whenLabel={whenLabel} variant="card" keys={keys} comingCount={comingCount} />}
+      {keys.length > 0 && <MatchManage communityId={communityId} matchId={matchId} status={status} title={title} whenLabel={whenLabel} variant="card" keys={keys} comingCount={comingCount} canManage={canManage} />}
     </section>
   );
 }

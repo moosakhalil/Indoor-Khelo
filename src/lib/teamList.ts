@@ -19,6 +19,8 @@ export type TeamItem = {
   tied: number;
   /** Last five finished matches, oldest first. */
   form: { result: Result; opponent: string }[];
+  /** The viewer may delete this team: they added it, or they are an Admin (lib/ownerRule.ts). Missing means yes. */
+  canDelete?: boolean;
 };
 
 export type TableRow = { id: string; name: string; rank: number; played: number; won: number; lost: number; tied: number; winPercent: number | null; totalRuns: number; mine: boolean };

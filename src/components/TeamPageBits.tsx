@@ -13,13 +13,14 @@ import { useSnackbar } from "@/components/Snackbar";
 import TeamDeleteDialog from "@/components/TeamDeleteDialog";
 import { matchesText, needsPlayersText, playersText } from "@/lib/teamList";
 
-export function TeamTopActions({ communityId, teamId, name, matchCount }: { communityId: string; teamId: string; name: string; matchCount: number }) {
+export function TeamTopActions({ communityId, teamId, name, matchCount, canDelete = true }: { communityId: string; teamId: string; name: string; matchCount: number; canDelete?: boolean }) {
   const [ask, setAsk] = useState(false);
   const base = `/c/${communityId}/teams/${teamId}`;
   const items: ActionItem[] = [
     { label: "Edit team", href: `${base}/edit` },
     { label: "Edit squad", href: `${base}/squad` },
-    { label: matchCount > 0 ? `Delete team (has ${matchesText(matchCount)}, not allowed)` : "Delete team…", danger: true, onSelect: () => setAsk(true) },
+    // Only the person who added the team, or an Admin, is offered Delete (lib/ownerRule.ts).
+    ...(canDelete ? [{ label: matchCount > 0 ? `Delete team (has ${matchesText(matchCount)}, not allowed)` : "Delete team…", danger: true, onSelect: () => setAsk(true) }] : []),
   ];
   return (
     <span className="tm-top">

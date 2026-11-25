@@ -22,6 +22,7 @@ export function noticeFor(code: string | undefined, extra: { n?: string; skip?: 
     case "bad_state": return { tone: "red", text: "That cannot be done in this match's current state." };
     case "not_found": return { tone: "red", text: "That match or entry could not be found." };
     case "forbidden": return { tone: "red", text: "Only members of this community can do that." };
+    case "not_owner": return { tone: "red", text: "Only the person who added this match, or an Admin, can cancel or delete it." };
     case "not_a_member": return { tone: "red", text: "That person is not a member of this community." };
     case "already_in_match": return { tone: "red", text: "That member is already in this match, so the guest cannot be linked to them." };
     case "bad_side": return { tone: "red", text: "Choose a side." };

@@ -12,7 +12,7 @@ export async function myTeamIds(communityId: string, userId: string): Promise<Se
 }
 
 /** Plain data for a series card, so the client list never needs the database types. */
-export function toCardItem(s: SeriesFull, mine: ReadonlySet<string>): SeriesCardItem {
+export function toCardItem(s: SeriesFull, mine: ReadonlySet<string>, canDelete = true): SeriesCardItem {
   const rows = s.tally.rows;
   const sides = rows.map((r) => {
     const side = s.sides.find((x) => x.name === r.name);
@@ -22,5 +22,6 @@ export function toCardItem(s: SeriesFull, mine: ReadonlySet<string>): SeriesCard
     id: s.id, name: s.name, open: s.status === "open", format: s.format, bestOf: s.best_of, matchCount: s.match_count,
     sides, wins: rows.length === 2 ? [rows[0]!.won, rows[1]!.won] : null,
     counted: s.tally.counted, line: tallyLine(s.tally), statusText: s.status_view.text, status: s.status_view,
+    canDelete, addedBy: s.created_by_name,
   };
 }

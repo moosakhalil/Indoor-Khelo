@@ -300,7 +300,11 @@ describe.skipIf(!run)("Phase 4: matches in the real database", () => {
     expect((await updateMatch(w.admin, w.id, id, { ...input(), scheduledAt: future(9) })).outcome).toBe("ok");
     expect((await getMatch(w.id, id, w.admin))!.status).toBe("scheduled");                 // a new date schedules it again
     expect((await listAlerts(w.people[0]!, w.id))[0]).toMatchObject({ kind: "match_changed" });
-    expect(await cancelMatch(w.people[1]!, w.id, id)).toBe("ok");
+    // cancel and delete are for the person who added the match, or an Admin: another member is refused and nothing changes
+    expect(await cancelMatch(w.people[1]!, w.id, id)).toBe("not_owner");
+    expect(await deleteMatch(w.people[1]!, w.id, id)).toBe("not_owner");
+    expect((await getMatch(w.id, id, w.admin))!.status).toBe("scheduled");
+    expect(await cancelMatch(w.admin, w.id, id)).toBe("ok");
     expect((await getMatch(w.id, id, w.admin))!.status).toBe("cancelled");
     expect((await listAlerts(w.people[0]!, w.id))[0]).toMatchObject({ kind: "match_cancelled" });
     expect((await updateMatch(w.admin, w.id, id, input())).outcome).toBe("locked");        // a cancelled match is not edited

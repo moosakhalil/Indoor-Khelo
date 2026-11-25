@@ -20,8 +20,10 @@ const ICON: Record<ManageKey, React.ReactNode> = {
   rematch: <IconSwap size={18} />, edit: <IconPencil size={18} />, postpone: <IconClock size={18} />, cancel: <IconCross size={18} />, delete: <IconTrash size={18} />,
 };
 
-export default function MatchManage({ communityId, matchId, status, title, whenLabel, variant = "panel", keys, comingCount = 0 }: {
+export default function MatchManage({ communityId, matchId, status, title, whenLabel, variant = "panel", keys, comingCount = 0, canManage = true }: {
   communityId: string; matchId: string; status: MatchStatus; title: string; whenLabel: string;
+  /** false: Cancel and Delete show dimmed with the reason (only the person who added the match, or an Admin, may do them). */
+  canManage?: boolean;
   /** panel: compact buttons (edit page). card: every action with its outcome line (also usable on the match page). */
   variant?: "panel" | "card"; keys?: ManageKey[];
   /** How many members answered "I'm in" for this match; shown in the cancel box when above 0. */
@@ -29,7 +31,7 @@ export default function MatchManage({ communityId, matchId, status, title, whenL
 }) {
   const [ask, setAsk] = useState<Ask>(null);
   const base = `/c/${communityId}/matches/${matchId}`;
-  const items = manageItems(status).filter((i) => !keys || keys.includes(i.key));
+  const items = manageItems(status, canManage).filter((i) => !keys || keys.includes(i.key));
   const send = async (action: (fd: FormData) => Promise<void>) => {
     const fd = new FormData();
     fd.set("communityId", communityId);

@@ -3,6 +3,7 @@
 import type { PoolClient } from "pg";
 import { isUniqueViolation, one, query, tx } from "@/lib/db";
 import { isUuid } from "@/lib/community";
+import { isAdminMember, mayManage } from "@/lib/ownerRule";
 import type { TeamInput } from "@/lib/validation";
 
 export type TeamRow = {
@@ -14,6 +15,8 @@ export type TeamRow = {
   vice_captain_id: string | null;
   captain_name: string | null;
   vice_name: string | null;
+  /** Who added the team: they, or an Admin, may delete it (lib/ownerRule.ts). */
+  created_by: string | null;
   added_by: string | null;
   changed_by: string | null;
   squad_count: number;
@@ -33,7 +36,7 @@ async function log(c: PoolClient, communityId: string, actorId: string, action: 
 }
 
 const TEAM_SELECT = `
-  select t.id, t.community_id, t.name, t.description, t.captain_id, t.vice_captain_id,
+  select t.id, t.community_id, t.name, t.description, t.captain_id, t.vice_captain_id, t.created_by,
          cap.name as captain_name, vice.name as vice_name, ab.name as added_by, cb.name as changed_by,
          (select count(*)::int from team_player p where p.team_id = t.id) as squad_count,
          t.created_at, t.updated_at
@@ -81,7 +84,7 @@ export async function teamMatchCount(teamId: string): Promise<number> {
   return r?.n ?? 0;
 }
 
-export type SaveOutcome = "ok" | "forbidden" | "name_taken" | "not_found" | "bad_person" | "has_matches";
+export type SaveOutcome = "ok" | "forbidden" | "name_taken" | "not_found" | "bad_person" | "has_matches" | "not_owner";
 
 /** Captain and vice-captain must be approved members; they are put in the squad automatically. */
 async function checkLeaders(c: PoolClient, communityId: string, input: TeamInput): Promise<boolean> {
@@ -168,6 +171,10 @@ export async function setSquad(userId: string, communityId: string, teamId: stri
 export async function deleteTeam(userId: string, communityId: string, teamId: string): Promise<SaveOutcome> {
   return tx(async (c) => {
     if (!(await isApproved(c, communityId, userId))) return "forbidden";
+    // Only the person who added the team, or an Admin, can delete it (ownerRule.ts).
+    const own = await c.query<{ created_by: string | null }>("select created_by from team where id = $1 and community_id = $2", [teamId, communityId]);
+    if (!own.rows.length) return "not_found";
+    if (!mayManage({ id: userId, admin: await isAdminMember(c, communityId, userId) }, own.rows[0]!.created_by)) return "not_owner";
     // A team that has matches is protected: its matches would lose their record.
     const used = await c.query("select 1 from match_side s join team t on t.id = s.team_id where s.team_id = $1 and t.community_id = $2 limit 1", [teamId, communityId]);
     if (used.rows.length) return "has_matches";

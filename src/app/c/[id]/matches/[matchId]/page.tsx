@@ -18,6 +18,7 @@ import { lineupGap, primaryAction } from "@/lib/md";
 import { seriesOfMatch } from "@/lib/seriesDb";
 import { NOT_STARTED, bowlerLimitWarning, formatWhen, patternText } from "@/lib/matchRules";
 import { getOrigin } from "@/lib/origin";
+import { mayManage } from "@/lib/ownerRule";
 import { requireAcceptedUser } from "@/lib/session";
 import { listTeams, teamsOfPlayer } from "@/lib/teams";
 import { PLAYING_ROLES, labelOf } from "@/lib/validation";
@@ -33,9 +34,11 @@ export default async function MatchPage({ params, searchParams }: { params: Prom
   const { id, matchId } = await params;
   const q = await searchParams;
   const user = await requireAcceptedUser();
-  await requireMember(id, user.id);
+  const { membership } = await requireMember(id, user.id);
   const m = await getMatch(id, matchId, user.id);
   if (!m) notFound();
+  // Cancel and delete are for the person who added the match, or an Admin (lib/ownerRule.ts). Everything else is open to every member.
+  const canManage = mayManage({ id: user.id, admin: membership.role === "admin" }, m.created_by);
   const series = await seriesOfMatch(id, matchId);
   const [lineup, replies, members, tz, origin, events, lock, scorers, squads, teams] = await Promise.all([
     listLineup(id, matchId), listReplies(id, matchId), listApprovedMembers(id), getZone(), getOrigin(), loadEvents(matchId), getLock(id, matchId), scorersOf(matchId),
@@ -79,7 +82,7 @@ export default async function MatchPage({ params, searchParams }: { params: Prom
       title="Match"
       subtitle={<small className="muted">{title}</small>}
       back={`/c/${id}/matches`}
-      right={<MdTopRight communityId={id} matchId={matchId} status={m.status} link={link} title={title} rematchLabel={rematchLabel} />}
+      right={<MdTopRight communityId={id} matchId={matchId} status={m.status} link={link} title={title} rematchLabel={rematchLabel} canManage={canManage} />}
       panel={<MdPanelSlot />}
     >
       <div className="stack">
@@ -108,7 +111,7 @@ export default async function MatchPage({ params, searchParams }: { params: Prom
           <MatchToss communityId={id} matchId={matchId} sides={[m.side1_name, m.side2_name]} winner={m.toss_winner_side} decision={m.toss_decision} battingFirst={m.batting_first_side} canEdit={notStarted} mine={mine} />
           <MdRules r={r} limitText={limitText} open={!played} />
           <MdLinkCard link={link} />
-          <MdManageCard communityId={id} matchId={matchId} status={m.status} title={title} whenLabel={whenLabel} rematchLabel={rematchLabel} comingCount={replies.filter((p) => p.answer === "in").length} />
+          <MdManageCard communityId={id} matchId={matchId} status={m.status} title={title} whenLabel={whenLabel} rematchLabel={rematchLabel} comingCount={replies.filter((p) => p.answer === "in").length} canManage={canManage} />
         </MdSide>
       </div>
     </Frame>

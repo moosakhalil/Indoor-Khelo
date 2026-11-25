@@ -6,29 +6,39 @@ import { deleteVenueAction } from "@/app/actions7";
 import ActionMenu from "@/components/ActionMenu";
 import { IconLock, IconTrash } from "@/components/B4Icons";
 import ConfirmDialog from "@/components/ConfirmDialog";
+import { ownerReason } from "@/lib/ownerRule";
 import { bookingsText, PV_DELETE_VENUE } from "@/lib/pv";
 import "./pv.css";
 
 /** The three-dots menu in the top bar: Edit venue (jumps to the form) and Delete venue (opens the same confirm as the button below). */
-export function PvVenueMenu({ name, bookingCount }: { name: string; bookingCount: number }) {
+export function PvVenueMenu({ name, bookingCount, canDelete = true }: { name: string; bookingCount: number; canDelete?: boolean }) {
   const used = bookingCount > 0;
   return (
     <ActionMenu label={`More actions for ${name}`} items={[
       { label: "Edit venue", onSelect: () => { const el = document.getElementById("pv-ve-name"); el?.scrollIntoView?.({ block: "center" }); el?.focus(); } },
-      { label: "Delete venue", danger: true, disabled: used, hint: used ? `It has ${bookingsText(bookingCount)}, so it stays` : undefined, onSelect: () => window.dispatchEvent(new Event(PV_DELETE_VENUE)) },
+      // Only the person who added the venue, or an Admin, is offered Delete (lib/ownerRule.ts).
+      ...(canDelete ? [{ label: "Delete venue", danger: true, disabled: used, hint: used ? `It has ${bookingsText(bookingCount)}, so it stays` : undefined, onSelect: () => window.dispatchEvent(new Event(PV_DELETE_VENUE)) }] : []),
     ]} />
   );
 }
 
-export function PvVenueDelete({ communityId, venueId, name, bookingCount }: { communityId: string; venueId: string; name: string; bookingCount: number }) {
+export function PvVenueDelete({ communityId, venueId, name, bookingCount, canDelete = true, addedBy = null }: { communityId: string; venueId: string; name: string; bookingCount: number; canDelete?: boolean; addedBy?: string | null }) {
   const [open, setOpen] = useState(false);
   const form = useRef<HTMLFormElement>(null);
   const used = bookingCount > 0;
   useEffect(() => {
-    const on = () => { if (!used) setOpen(true); };
+    const on = () => { if (!used && canDelete) setOpen(true); };
     window.addEventListener(PV_DELETE_VENUE, on);
     return () => window.removeEventListener(PV_DELETE_VENUE, on);
-  }, [used]);
+  }, [used, canDelete]);
+  if (!canDelete) {
+    return (
+      <section className="pv-card2" aria-label="Delete this venue">
+        <h2>Delete this venue</h2>
+        <p className="pv-lockline"><IconLock size={16} /><span>{ownerReason("delete", addedBy)}</span></p>
+      </section>
+    );
+  }
   return (
     <section className="pv-card2" aria-label="Delete this venue">
       <h2>Delete this venue</h2>

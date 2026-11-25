@@ -20,10 +20,12 @@ export type SeriesViewData = {
   created: boolean; error: string | null;
   /** Player of the Series (leading while open, final once closed). Null until a member has earned points in a finished match. */
   award?: AwardView | null;
+  /** The viewer may delete this series: they added it, or they are an Admin (lib/ownerRule.ts). Missing means yes. */
+  canDelete?: boolean;
 };
 
 export function SeriesSide({ communityId, d }: { communityId: string; d: SeriesViewData }) {
-  const ref = { id: d.id, name: d.name, open: d.open, matchCount: d.matchCount };
+  const ref = { id: d.id, name: d.name, open: d.open, matchCount: d.matchCount, canDelete: d.canDelete, addedBy: d.createdBy };
   return (
     <>
       {d.showTable && <PointsTable rows={d.table} />}
@@ -43,7 +45,7 @@ export function SeriesSide({ communityId, d }: { communityId: string; d: SeriesV
 }
 
 export default function SeriesView({ communityId, d }: { communityId: string; d: SeriesViewData }) {
-  const ref = { id: d.id, name: d.name, open: d.open, matchCount: d.matchCount };
+  const ref = { id: d.id, name: d.name, open: d.open, matchCount: d.matchCount, canDelete: d.canDelete, addedBy: d.createdBy };
   const base = `/c/${communityId}/series/${d.id}`;
   return (
     <div className="stack sr-page">

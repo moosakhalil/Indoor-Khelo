@@ -10,6 +10,10 @@ export type SeriesCardItem = {
   /** Wins of each side, in the same order as `sides`. Only for two-team series. */
   wins: [number, number] | null;
   counted: number; line: string; statusText: string; status: Status;
+  /** The viewer may delete this series: they added it, or they are an Admin (lib/ownerRule.ts). Missing means yes. */
+  canDelete?: boolean;
+  /** Who added it, for the "Only X or an Admin can delete it" sentence. */
+  addedBy?: string | null;
 };
 
 export type StateKind = "not_started" | "in_progress" | "drawn" | "won" | "closed_empty";
@@ -57,6 +61,7 @@ export function filterSeries<T extends Pick<SeriesCardItem, "open" | "name" | "s
 
 /* ---------- messages ---------- */
 export const PAGE_ERRORS: Record<string, string> = {
+  not_owner: "Only the person who added this series, or an Admin, can delete it.",
   not_in_series: "That match is not in this series.", bad_state: "That cannot be done in the series' current state.",
   forbidden: "Only members of this community can do that.", not_found: "That could not be found.",
 };

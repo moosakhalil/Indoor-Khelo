@@ -1,10 +1,11 @@
 import type { Metadata } from "next";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { RecordSummary } from "@/components/BookingBits";
 import Frame from "@/components/Frame";
 import { EditPaymentForm, type PayHint } from "@/components/Forms7";
 import { getBooking, listPayments, listSharing, moneyView } from "@/lib/bookings";
 import { listApprovedMembers, requireMember } from "@/lib/community";
+import { mayManage } from "@/lib/ownerRule";
 import { METHODS, money, netFor } from "@/lib/payments";
 import { payerKey } from "@/lib/pbBooking";
 import { requireAcceptedUser } from "@/lib/session";
@@ -15,12 +16,14 @@ export const dynamic = "force-dynamic";
 export default async function EditPaymentPage({ params }: { params: Promise<{ id: string; bookingId: string; paymentId: string }> }) {
   const { id, bookingId, paymentId } = await params;
   const user = await requireAcceptedUser();
-  await requireMember(id, user.id);
+  const { membership } = await requireMember(id, user.id);
   const b = await getBooking(id, bookingId);
   if (!b) notFound();
   const [payments, sharing, members] = await Promise.all([listPayments(bookingId), listSharing(bookingId), listApprovedMembers(id)]);
   const p = payments.find((x) => x.id === paymentId);
   if (!p) notFound();
+  // Only the person who recorded the payment, or an Admin, can change it (lib/ownerRule.ts).
+  if (!mayManage({ id: user.id, admin: membership.role === "admin" }, p.created_by)) redirect(`/c/${id}/payments/${bookingId}?e=not_owner#payments`);
   const numberOf = new Map(members.map((m) => [m.user_id, m.player_number] as const));
   const people = [
     ...sharing.filter((s) => s.guest).map((s) => ({ value: `g:${s.name}`, label: `${s.name} (guest)`, number: null as number | null })),

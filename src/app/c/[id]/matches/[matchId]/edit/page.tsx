@@ -10,6 +10,7 @@ import { recentSetup } from "@/lib/crData";
 import { valuesFromMatch } from "@/lib/crSetup";
 import { getMatch, listLineup, listReplies } from "@/lib/matches";
 import { NOT_STARTED, formatWhen, toLocalInput } from "@/lib/matchRules";
+import { mayManage } from "@/lib/ownerRule";
 import { requireAcceptedUser } from "@/lib/session";
 import { teamsOfPlayer, listTeams } from "@/lib/teams";
 import { getZone } from "@/lib/zone";
@@ -22,9 +23,10 @@ export default async function EditMatchPage({ params, searchParams }: { params: 
   const { id, matchId } = await params;
   const q = await searchParams;
   const user = await requireAcceptedUser();
-  await requireMember(id, user.id);
+  const { membership } = await requireMember(id, user.id);
   const m = await getMatch(id, matchId, user.id);
   if (!m) notFound();
+  const canManage = mayManage({ id: user.id, admin: membership.role === "admin" }, m.created_by);   // cancel / delete: who added it, or an Admin
   // Only a match that has not started can be edited (a cancelled one can only be deleted).
   if (!(NOT_STARTED as readonly string[]).includes(m.status)) redirect(`/c/${id}/matches/${matchId}?e=locked`);
   const tz = await getZone();
@@ -46,7 +48,7 @@ export default async function EditMatchPage({ params, searchParams }: { params: 
         initialValues={valuesFromMatch({
           when: toLocalInput(m.scheduled_at, tz), venue: m.venue, overs: m.overs, playersPerSide: m.players_per_side, rules: m.rules, umpire: m.umpire, notes: m.notes,
         })}
-        comingCount={replies.filter((p) => p.answer === "in").length}
+        comingCount={replies.filter((p) => p.answer === "in").length} canManage={canManage}
         recentVenues={recent.venues} lastWhen={recent.lastWhen} whenLabel={m.scheduled_at ? formatWhen(m.scheduled_at, tz) : ""}
       />
     </Frame>

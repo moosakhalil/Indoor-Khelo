@@ -26,7 +26,9 @@ const CONTROL: Record<string, string> = {
 
 type Side = { name: string; mine: boolean };
 
-export default function MatchEditor({ communityId, matchId, status, sideA, sideB, lineup, initialValues, recentVenues, lastWhen, whenLabel, comingCount = 0 }: {
+export default function MatchEditor({ communityId, matchId, status, sideA, sideB, lineup, initialValues, recentVenues, lastWhen, whenLabel, comingCount = 0, canManage = true }: {
+  /** Cancel and delete are only for the person who added the match, or an Admin (lib/ownerRule.ts). */
+  canManage?: boolean;
   communityId: string; matchId: string; status: MatchStatus; sideA: Side; sideB: Side;
   /** How many players each side already has in the lineup. */
   lineup: { a: number; b: number };
@@ -168,7 +170,7 @@ export default function MatchEditor({ communityId, matchId, status, sideA, sideB
 
             <section className="cr-card cr-managecard" aria-labelledby="ed-manage-h">
               <h2 id="ed-manage-h" className="cr-eyebrow">Manage this match</h2>
-              <MatchManage communityId={communityId} matchId={matchId} status={status} title={title} whenLabel={whenLabel} keys={["postpone", "cancel", "delete"]} comingCount={comingCount} />
+              <MatchManage communityId={communityId} matchId={matchId} status={status} title={title} whenLabel={whenLabel} keys={["postpone", "cancel", "delete"]} comingCount={comingCount} canManage={canManage} />
             </section>
             <div className="cr-bar">
               <Link href={base} className="btn ghost">Cancel</Link>

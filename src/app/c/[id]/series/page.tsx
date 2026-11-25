@@ -4,6 +4,7 @@ import Frame from "@/components/Frame";
 import SeriesList, { SeriesEmpty } from "@/components/SeriesList";
 import { IconPlus } from "@/components/SrIcons";
 import { requireMember } from "@/lib/community";
+import { mayManage } from "@/lib/ownerRule";
 import { listSeries } from "@/lib/seriesDb";
 import { myTeamIds, toCardItem } from "@/lib/seriesMine";
 import { requireAcceptedUser } from "@/lib/session";
@@ -16,9 +17,10 @@ export default async function SeriesListPage({ params, searchParams }: { params:
   const { id } = await params;
   const { deleted } = await searchParams;
   const user = await requireAcceptedUser();
-  await requireMember(id, user.id);
+  const { membership } = await requireMember(id, user.id);
+  const admin = membership.role === "admin";
   const [list, mine] = await Promise.all([listSeries(id), myTeamIds(id, user.id)]);
-  const items = list.map((s) => toCardItem(s, mine));
+  const items = list.map((s) => toCardItem(s, mine, mayManage({ id: user.id, admin }, s.created_by)));   // delete: who added it, or an Admin
   return (
     <Frame
       communityId={id}

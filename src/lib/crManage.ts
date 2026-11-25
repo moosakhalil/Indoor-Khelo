@@ -7,8 +7,17 @@ export type ManageItem = { key: ManageKey; label: string; outcome: string; ok: b
 
 const notStarted = (s: MatchStatus) => (NOT_STARTED as readonly string[]).includes(s);
 
-export function manageItems(status: MatchStatus): ManageItem[] {
-  const started = !notStarted(status) && status !== "cancelled";
+/** Only the person who added the match, or an Admin, may cancel or delete it (lib/ownerRule.ts). Everything else stays open to every member. */
+export const CANCEL_OWNER_WHY = "Only the person who added this match, or an Admin, can cancel it.";
+export const DELETE_OWNER_WHY = "Only the person who added this match, or an Admin, can delete it.";
+
+export function manageItems(status: MatchStatus, canManage = true): ManageItem[] {
+  const items = baseItems(status);
+  if (canManage) return items;
+  return items.map((i) => (i.key === "cancel" ? { ...i, ok: false, why: CANCEL_OWNER_WHY } : i.key === "delete" ? { ...i, ok: false, why: DELETE_OWNER_WHY } : i));
+}
+
+function baseItems(status: MatchStatus): ManageItem[] {
   return [
     { key: "rematch", label: "Rematch", outcome: "Same teams, venue, overs, rules and lineups. Pick a new date.", ok: true, why: null },
     {

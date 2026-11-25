@@ -55,7 +55,7 @@ export default function MatchItemCard({ communityId, m }: { communityId: string;
       <div className="ml-body">
         <div className="ml-head">
           <Link href={`/c/${communityId}/matches/${m.id}`} className="ml-title">{title}</Link>
-          <MatchRowMenu communityId={communityId} matchId={m.id} status={m.status} side1={m.side1} side2={m.side2} />
+          <MatchRowMenu communityId={communityId} matchId={m.id} status={m.status} side1={m.side1} side2={m.side2} canManage={m.canManage} />
         </div>
         <div className="ml-meta">
           <span className={`chip ${TONE[m.status] ?? ""} ml-status`}>{m.status === "live" && <span className="ml-dot" aria-hidden="true" />}{STATUS_LABEL[m.status]}</span>

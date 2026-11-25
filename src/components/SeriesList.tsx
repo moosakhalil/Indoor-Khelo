@@ -25,7 +25,7 @@ export function SeriesEmpty({ communityId }: { communityId: string }) {
 
 export function SeriesCard({ communityId, s }: { communityId: string; s: SeriesCardItem }) {
   const state = seriesState(s.open, s.status, s.counted);
-  const ref = { id: s.id, name: s.name, open: s.open, matchCount: s.matchCount };
+  const ref = { id: s.id, name: s.name, open: s.open, matchCount: s.matchCount, canDelete: s.canDelete, addedBy: s.addedBy };
   const href = `/c/${communityId}/series/${s.id}`;
   const two = s.sides.length === 2 && s.wins;
   const lead = two && s.wins![0] !== s.wins![1] ? (s.wins![0] > s.wins![1] ? 0 : 1) : -1;

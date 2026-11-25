@@ -1,7 +1,7 @@
 "use client";
 // The three-dots menu of a match in the list. It does only what the match page can already do, in the same states:
 // open, pick lineups, edit, rematch, postpone, cancel and delete. Postpone and cancel ask first; delete asks for the match name.
-// Any approved member may do these (the server checks it again), exactly as on the match page.
+// Cancel and delete are only listed for the person who added the match or an Admin (the server checks it again); the rest is open to every member.
 import { useState } from "react";
 import { cancelAction, deleteMatchAction, postponeAction } from "@/app/actions4";
 import ActionMenu, { type ActionItem } from "@/components/ActionMenu";
@@ -11,12 +11,12 @@ import type { MatchStatus } from "@/lib/matchRules";
 
 type Ask = "postpone" | "cancel" | "delete" | null;
 
-export default function MatchRowMenu({ communityId, matchId, status, side1, side2 }: { communityId: string; matchId: string; status: MatchStatus; side1: string; side2: string }) {
+export default function MatchRowMenu({ communityId, matchId, status, side1, side2, canManage = true }: { communityId: string; matchId: string; status: MatchStatus; side1: string; side2: string; canManage?: boolean }) {
   const [ask, setAsk] = useState<Ask>(null);
   const title = titleOf({ side1, side2 });
   const base = `/c/${communityId}/matches/${matchId}`;
   const hrefOf = { open: base, lineup: `${base}/lineup`, edit: `${base}/edit`, rematch: `${base}/rematch` } as const;
-  const items: ActionItem[] = menuFor(status).map((a) => {
+  const items: ActionItem[] = menuFor(status, canManage).map((a) => {
     if (a.key === "postpone" || a.key === "cancel" || a.key === "delete") return { label: a.label, danger: a.danger, onSelect: () => setAsk(a.key as Ask) };
     return { label: a.label, href: hrefOf[a.key] };
   });

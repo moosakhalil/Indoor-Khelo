@@ -7,10 +7,20 @@ import Link from "next/link";
 import { useState } from "react";
 import { IconLock, IconTrash } from "@/components/B4Icons";
 import TeamDeleteDialog from "@/components/TeamDeleteDialog";
+import { ownerReason } from "@/lib/ownerRule";
 import { deleteBlockedText } from "@/lib/teamList";
 
-export default function TeamDangerZone({ communityId, teamId, name, matchCount }: { communityId: string; teamId: string; name: string; matchCount: number }) {
+export default function TeamDangerZone({ communityId, teamId, name, matchCount, canDelete = true, addedBy = null }: { communityId: string; teamId: string; name: string; matchCount: number; canDelete?: boolean; addedBy?: string | null }) {
   const [ask, setAsk] = useState(false);
+  // Only the person who added the team, or an Admin, can delete it (lib/ownerRule.ts): the others see why, with no delete button.
+  if (!canDelete) {
+    return (
+      <section className="card tm-danger locked" aria-labelledby="tm-dz-h">
+        <div className="row space"><b id="tm-dz-h">Delete this team</b><span className="chip"><IconLock size={14} /> Locked</span></div>
+        <p className="muted small" style={{ margin: "6px 0 0" }}>{ownerReason("delete", addedBy)}</p>
+      </section>
+    );
+  }
   if (matchCount > 0) {
     return (
       <section className="card tm-danger locked" aria-labelledby="tm-dz-h">

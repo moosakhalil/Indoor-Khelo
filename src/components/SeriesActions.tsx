@@ -12,8 +12,10 @@ import ActionMenu, { type ActionItem } from "@/components/ActionMenu";
 import ConfirmDialog from "@/components/ConfirmDialog";
 import { useSnackbar } from "@/components/Snackbar";
 import { IconInfo, IconLock, IconPencil, IconTrash, IconTrophy } from "@/components/SrIcons";
+import { ownerReason } from "@/lib/ownerRule";
 
-export type SeriesRef = { id: string; name: string; open: boolean; matchCount: number };
+/** `canDelete` false: only the person who added the series, or an Admin, may delete it (lib/ownerRule.ts), so no Delete button is shown. Missing means yes. */
+export type SeriesRef = { id: string; name: string; open: boolean; matchCount: number; canDelete?: boolean; addedBy?: string | null };
 
 export function SeriesDeleteDialog({ open, onClose, communityId, series }: { open: boolean; onClose: () => void; communityId: string; series: SeriesRef }) {
   return (
@@ -66,7 +68,7 @@ export function SeriesMenu({ communityId, series, className }: { communityId: st
     { label: "Edit series", href: `${base}/edit` },
     { label: "Add matches", href: `${base}/add` },
     { label: series.open ? "Close the series" : "Reopen the series", onSelect: () => void toggle() },
-    { label: "Delete series…", danger: true, onSelect: () => setAsk(true) },
+    ...(series.canDelete === false ? [] : [{ label: "Delete series…", danger: true, onSelect: () => setAsk(true) }]),
   ];
   return (
     <span className={className}>
@@ -82,7 +84,7 @@ export function SeriesQuickTools({ communityId, series }: { communityId: string;
   return (
     <span className="sr-quick">
       <Link href={`/c/${communityId}/series/${series.id}/edit`} className="sr-iconbtn" aria-label={`Edit ${series.name}`}><IconPencil /></Link>
-      <button type="button" className="sr-iconbtn danger" aria-label={`Delete ${series.name}`} onClick={() => setAsk(true)}><IconTrash /></button>
+      {series.canDelete !== false && <button type="button" className="sr-iconbtn danger" aria-label={`Delete ${series.name}`} onClick={() => setAsk(true)}><IconTrash /></button>}
       <SeriesDeleteDialog open={ask} onClose={() => setAsk(false)} communityId={communityId} series={series} />
     </span>
   );
@@ -102,6 +104,14 @@ export function CloseCard({ communityId, series }: { communityId: string; series
 
 export function DeleteCard({ communityId, series }: { communityId: string; series: SeriesRef }) {
   const [ask, setAsk] = useState(false);
+  if (series.canDelete === false) {
+    return (
+      <section className="card sr-side-card">
+        <h2>Delete series</h2>
+        <p className="muted small"><IconLock />{" "}{ownerReason("delete", series.addedBy && series.addedBy !== "—" ? series.addedBy : null)}</p>
+      </section>
+    );
+  }
   return (
     <section className="card sr-side-card sr-danger">
       <h2>Delete series</h2>

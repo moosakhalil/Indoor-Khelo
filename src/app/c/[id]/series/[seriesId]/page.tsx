@@ -8,6 +8,7 @@ import SeriesView, { SeriesSide, type SeriesViewData } from "@/components/Series
 import { IconPencil } from "@/components/SrIcons";
 import { requireMember } from "@/lib/community";
 import { formatWhen } from "@/lib/matchRules";
+import { mayManage } from "@/lib/ownerRule";
 import { playerOfSeries } from "@/lib/seriesAward";
 import { seriesAwardLines } from "@/lib/seriesAwardDb";
 import { getSeries } from "@/lib/seriesDb";
@@ -27,9 +28,10 @@ export default async function SeriesPage({ params, searchParams }: { params: Pro
   const { id, seriesId } = await params;
   const q = await searchParams;
   const user = await requireAcceptedUser();
-  await requireMember(id, user.id);
+  const { membership } = await requireMember(id, user.id);
   const s = await getSeries(id, seriesId);
   if (!s) notFound();
+  const canDelete = mayManage({ id: user.id, admin: membership.role === "admin" }, s.created_by);   // delete: who added the series, or an Admin
   const [tz, mine, awardLines] = await Promise.all([getZone(), myTeamIds(id, user.id), seriesAwardLines(id, seriesId)]);
   const open = s.status === "open";
   const upcoming = s.matches.filter((m) => UPCOMING.includes(m.status));
@@ -41,7 +43,7 @@ export default async function SeriesPage({ params, searchParams }: { params: Pro
   const award = won ? { ...won, final: !open } : null;
   const base = `/c/${id}/series/${seriesId}`;
   const dates = s.starts_on || s.ends_on ? `${s.starts_on ?? "…"} to ${s.ends_on ?? "…"}` : null;
-  const ref = { id: s.id, name: s.name, open, matchCount: s.match_count };
+  const ref = { id: s.id, name: s.name, open, matchCount: s.match_count, canDelete, addedBy: s.created_by_name };
 
   const isMine = (teamId: string | null) => !!(teamId && mine.has(teamId));
   const sides = s.tally.rows.map((r) => { const side = s.sides.find((x) => x.name === r.name); return { name: r.name, teamId: side?.teamId ?? null, mine: isMine(side?.teamId ?? null) }; });
@@ -63,7 +65,7 @@ export default async function SeriesPage({ params, searchParams }: { params: Pro
     fixtures: upcoming.map(toRow), results: results.map(toRow),
     notes: s.notes, createdBy: s.created_by_name ?? "—", changedBy: s.changed_by_name ?? "—", changedAt: formatWhen(s.updated_at, tz),
     created: !!q.created, error: q.e ? (PAGE_ERRORS[q.e] ?? "That could not be done.") : null,
-    award,
+    award, canDelete,
   };
 
   return (

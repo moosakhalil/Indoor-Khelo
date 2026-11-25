@@ -192,16 +192,20 @@ describe.skipIf(!run)("Phase 7: venues, bookings and money in the real database"
     const w = await newBooking();
     const a = w.people[1]!;
     const id = randomUUID();
-    await addPayment(w.admin, w.id, w.bookingId, id, pay(a, 600));
-    await verifyPayment(w.people[2]!, w.id, w.bookingId, id, true);
+    await addPayment(w.people[3]!, w.id, w.bookingId, id, pay(a, 600));        // recorded by TEST p2
+    await verifyPayment(w.people[2]!, w.id, w.bookingId, id, true);            // any member may mark it checked
+    // only the person who recorded it, or an Admin, can change or remove it: another member is refused and nothing changes
+    expect(await updatePayment(w.people[2]!, w.id, w.bookingId, id, pay(a, 999))).toBe("not_owner");
+    expect(await deletePayment(w.people[2]!, w.id, w.bookingId, id)).toBe("not_owner");
+    expect((await listPayments(w.bookingId))[0]).toMatchObject({ amount: 600, verified_by_name: "TEST p1" });
     expect(await updatePayment(w.people[3]!, w.id, w.bookingId, id, pay(a, 650, { method: "bank_transfer", reference: "TX9" }))).toBe("ok");
     const p = (await listPayments(w.bookingId))[0]!;
-    expect(p).toMatchObject({ amount: 650, method: "bank_transfer", reference: "TX9", verified_by_name: null, changed_by_name: "TEST p2", created_by_name: "TEST admin" });
+    expect(p).toMatchObject({ amount: 650, method: "bank_transfer", reference: "TX9", verified_by_name: null, changed_by_name: "TEST p2", created_by_name: "TEST p2" });
     const change = (await listHistory(w.bookingId)).find((h) => h.action === "payment_changed")!;
     expect(change.actor_name).toBe("TEST p2");
     expect(change.details.changes).toEqual(expect.arrayContaining([{ field: "amount", from: 600, to: 650 }, { field: "method", from: "cash", to: "bank_transfer" }]));
     expect(await verifyPayment(w.admin, w.id, w.bookingId, id, false)).toBe("ok");
-    expect(await deletePayment(w.people[2]!, w.id, w.bookingId, id)).toBe("ok");
+    expect(await deletePayment(w.admin, w.id, w.bookingId, id)).toBe("ok");     // an Admin may remove anyone's record
     expect(await listPayments(w.bookingId)).toHaveLength(0);
     expect((await listHistory(w.bookingId))[0]).toMatchObject({ action: "payment_removed" });
     expect(await deletePayment(w.admin, w.id, w.bookingId, id)).toBe("not_found");

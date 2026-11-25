@@ -4,6 +4,7 @@ import type { PoolClient } from "pg";
 import { isUniqueViolation, one, query, tx } from "@/lib/db";
 import { isUuid } from "@/lib/community";
 import { NOT_STARTED, type MatchInput, type MatchStatus, type Rules } from "@/lib/matchRules";
+import { isAdminMember, mayManage } from "@/lib/ownerRule";
 
 export type MatchRow = {
   id: string;
@@ -21,6 +22,8 @@ export type MatchRow = {
   batting_first_side: number | null;
   rematch_of: string | null;
   last_reminder_at: Date | null;
+  /** Who added the match: they, or an Admin, may cancel or delete it (lib/ownerRule.ts). */
+  created_by: string | null;
   created_by_name: string | null;
   changed_by_name: string | null;
   created_at: Date;
@@ -72,7 +75,7 @@ async function alertMembers(c: PoolClient, communityId: string, matchId: string,
 const SELECT = `
   select m.id, m.community_id, m.status, m.scheduled_at, m.venue, m.overs, m.players_per_side, m.rules, m.umpire, m.notes,
          m.toss_winner_side, m.toss_decision, m.batting_first_side, m.rematch_of, m.last_reminder_at,
-         ab.name as created_by_name, cb.name as changed_by_name, m.created_at, m.updated_at,
+         m.created_by, ab.name as created_by_name, cb.name as changed_by_name, m.created_at, m.updated_at,
          s1.id as side1_id, s1.name as side1_name, s1.team_id as side1_team,
          s2.id as side2_id, s2.name as side2_name, s2.team_id as side2_team,
          (select count(*)::int from match_availability a join community_member cm on cm.community_id = m.community_id and cm.user_id = a.user_id and cm.status = 'approved'
@@ -254,20 +257,20 @@ export async function createRematch(userId: string, communityId: string, sourceI
 
 export type ChangeOutcome =
   | "ok" | "forbidden" | "not_found" | "locked" | "bad_state" | "too_many" | "no_date"
-  | "not_a_member" | "already_in_match" | "duplicate_guest" | "too_soon" | "nobody" | "bad_side";
+  | "not_a_member" | "already_in_match" | "duplicate_guest" | "too_soon" | "nobody" | "bad_side" | "not_owner";
 
-/** Lock the match row and check the person and the status. */
+/** Lock the match row and check the person and the status. `createdBy` and `admin` feed the cancel / delete rule (see ownerRule.ts). */
 async function openMatch(c: PoolClient, userId: string, communityId: string, matchId: string): Promise<
-  { ok: false; outcome: "forbidden" | "not_found" } | { ok: true; status: MatchStatus; overs: number; playersPerSide: number; rules: Rules; scheduledAt: Date | null; sideNames: string[]; lastReminderAt: Date | null }
+  { ok: false; outcome: "forbidden" | "not_found" } | { ok: true; status: MatchStatus; overs: number; playersPerSide: number; rules: Rules; scheduledAt: Date | null; sideNames: string[]; lastReminderAt: Date | null; createdBy: string | null; admin: boolean }
 > {
   if (!isUuid(matchId) || !isUuid(communityId)) return { ok: false, outcome: "not_found" };
   if (!(await isApproved(c, communityId, userId))) return { ok: false, outcome: "forbidden" };
-  const r = await c.query<{ status: MatchStatus; overs: number; players_per_side: number; rules: Rules; scheduled_at: Date | null; last_reminder_at: Date | null }>(
-    "select status, overs, players_per_side, rules, scheduled_at, last_reminder_at from cricket_match where id = $1 and community_id = $2 for update", [matchId, communityId]);
+  const r = await c.query<{ status: MatchStatus; overs: number; players_per_side: number; rules: Rules; scheduled_at: Date | null; last_reminder_at: Date | null; created_by: string | null }>(
+    "select status, overs, players_per_side, rules, scheduled_at, last_reminder_at, created_by from cricket_match where id = $1 and community_id = $2 for update", [matchId, communityId]);
   if (!r.rows.length) return { ok: false, outcome: "not_found" };
   const m = r.rows[0]!;
   const sides = await c.query<{ name: string }>("select name from match_side where match_id = $1 order by position", [matchId]);
-  return { ok: true, status: m.status, overs: m.overs, playersPerSide: m.players_per_side, rules: m.rules, scheduledAt: m.scheduled_at, sideNames: sides.rows.map((s) => s.name), lastReminderAt: m.last_reminder_at };
+  return { ok: true, status: m.status, overs: m.overs, playersPerSide: m.players_per_side, rules: m.rules, scheduledAt: m.scheduled_at, sideNames: sides.rows.map((s) => s.name), lastReminderAt: m.last_reminder_at, createdBy: m.created_by, admin: await isAdminMember(c, communityId, userId) };
 }
 
 const touch = (c: PoolClient, matchId: string, userId: string) =>
@@ -330,6 +333,7 @@ export async function cancelMatch(userId: string, communityId: string, matchId: 
   return tx(async (c) => {
     const m = await openMatch(c, userId, communityId, matchId);
     if (!m.ok) return m.outcome;
+    if (!mayManage({ id: userId, admin: m.admin }, m.createdBy)) return "not_owner";   // only who added the match, or an Admin
     if (!isNotStarted(m.status)) return "bad_state";
     await c.query("update cricket_match set status = 'cancelled', changed_by = $2, updated_at = now() where id = $1", [matchId, userId]);
     await alertMembers(c, communityId, matchId, "match_cancelled", `${m.sideNames[0]} v ${m.sideNames[1]} has been cancelled.`, userId);
@@ -343,6 +347,7 @@ export async function deleteMatch(userId: string, communityId: string, matchId: 
   return tx(async (c) => {
     const m = await openMatch(c, userId, communityId, matchId);
     if (!m.ok) return m.outcome;
+    if (!mayManage({ id: userId, admin: m.admin }, m.createdBy)) return "not_owner";   // only who added the match, or an Admin
     if (!isNotStarted(m.status) && m.status !== "cancelled") return "bad_state";
     await c.query("delete from cricket_match where id = $1", [matchId]);
     await log(c, communityId, userId, "match_deleted", { match: matchId });

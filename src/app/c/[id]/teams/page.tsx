@@ -3,6 +3,7 @@ import Frame from "@/components/Frame";
 import TeamsList from "@/components/TeamsList";
 import { requireMember } from "@/lib/community";
 import { teamMatchCounts } from "@/lib/listB4";
+import { mayManage } from "@/lib/ownerRule";
 import { teamTable } from "@/lib/reports";
 import { requireAcceptedUser } from "@/lib/session";
 import { listTeams, teamsOfPlayer } from "@/lib/teams";
@@ -13,7 +14,8 @@ export const metadata: Metadata = { title: "Teams" };
 export default async function TeamsPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const user = await requireAcceptedUser();
-  await requireMember(id, user.id);
+  const { membership } = await requireMember(id, user.id);
+  const admin = membership.role === "admin";
   const teams = await listTeams(id);
   const [records, counts, squads] = await Promise.all([
     teamTable(id, teams.map((t) => ({ id: t.id, name: t.name }))),
@@ -30,6 +32,7 @@ export default async function TeamsPage({ params }: { params: Promise<{ id: stri
       matches: counts.get(t.id) ?? 0,
       played: r?.played ?? 0, won: r?.won ?? 0, lost: r?.lost ?? 0, tied: r?.tied ?? 0,
       form: (r?.history ?? []).slice(-5).map((h) => ({ result: h.result, opponent: h.opponent })),
+      canDelete: mayManage({ id: user.id, admin }, t.created_by),
     };
   });
   // The table is the records in their ranked order (wins, then win percentage, then runs). A team that has not played is not in it.

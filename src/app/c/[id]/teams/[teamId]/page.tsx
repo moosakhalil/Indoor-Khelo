@@ -11,6 +11,7 @@ import { FormGuide, TeamBadgeMine } from "@/components/TeamsList";
 import { scoresSeries, teamForm } from "@/lib/analytics";
 import { listApprovedMembers, requireMember } from "@/lib/community";
 import { teamMatchCounts } from "@/lib/listB4";
+import { mayManage } from "@/lib/ownerRule";
 import { teamContributors, teamRecord, teamTable } from "@/lib/reports";
 import { requireAcceptedUser } from "@/lib/session";
 import { getTeam, listSquad, listTeams, teamsOfPlayer } from "@/lib/teams";
@@ -23,9 +24,10 @@ export const metadata: Metadata = { title: "Team" };
 export default async function TeamPage({ params }: { params: Promise<{ id: string; teamId: string }> }) {
   const { id, teamId } = await params;
   const user = await requireAcceptedUser();
-  await requireMember(id, user.id);
+  const { membership } = await requireMember(id, user.id);
   const team = await getTeam(id, teamId);
   if (!team) notFound();
+  const canDelete = mayManage({ id: user.id, admin: membership.role === "admin" }, team.created_by);   // who added the team, or an Admin
   const [squad, rec, who, members, teams, counts, squads] = await Promise.all([
     listSquad(teamId), teamRecord(id, teamId), teamContributors(id, teamId), listApprovedMembers(id), listTeams(id), teamMatchCounts(id), teamsOfPlayer(id, user.id),
   ]);
@@ -41,7 +43,7 @@ export default async function TeamPage({ params }: { params: Promise<{ id: strin
   const newMatch = `/c/${id}/matches/new?team=${teamId}`;
 
   return (
-    <Frame communityId={id} title={team.name} back={`/c/${id}/teams`} right={<TeamTopActions communityId={id} teamId={teamId} name={team.name} matchCount={matchCount} />}>
+    <Frame communityId={id} title={team.name} back={`/c/${id}/teams`} right={<TeamTopActions communityId={id} teamId={teamId} name={team.name} matchCount={matchCount} canDelete={canDelete} />}>
       <div className="tm-page">
         <section className="card tm-hero tm-span">
           <TeamBadgeMine name={team.name} mine={mine} size="lg" />

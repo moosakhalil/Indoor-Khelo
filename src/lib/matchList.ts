@@ -29,6 +29,8 @@ export type MatchItem = {
   isNew: boolean;
   /** Sort key for the upcoming group (milliseconds, null = no date). */
   at: number | null;
+  /** The viewer may cancel or delete this match: they added it, or they are an Admin (lib/ownerRule.ts). Missing means yes. */
+  canManage?: boolean;
 };
 
 export type Segment = "all" | "live" | "upcoming" | "past";
@@ -95,15 +97,16 @@ export const PLANNED_EXPLAIN = "Each one is separate, with its own replies and l
 export const WEEK_MS = 7 * 24 * 3600 * 1000;
 
 /** The actions in a match's menu. Only what the match page can already do, in the states it can do it. */
-export function menuFor(status: MatchStatus): { key: "open" | "lineup" | "edit" | "rematch" | "postpone" | "cancel" | "delete"; label: string; danger?: boolean }[] {
+export function menuFor(status: MatchStatus, canManage = true): { key: "open" | "lineup" | "edit" | "rematch" | "postpone" | "cancel" | "delete"; label: string; danger?: boolean }[] {
   const out: { key: "open" | "lineup" | "edit" | "rematch" | "postpone" | "cancel" | "delete"; label: string; danger?: boolean }[] = [{ key: "open", label: "Open match" }];
   if (isNotStarted(status)) {
     out.push({ key: "lineup", label: "Pick lineups" }, { key: "edit", label: "Edit match" });
   }
   out.push({ key: "rematch", label: "Rematch" });
   if (status === "scheduled" || status === "draft") out.push({ key: "postpone", label: "Postpone…" });
-  if (isNotStarted(status)) out.push({ key: "cancel", label: "Cancel match…", danger: true });
-  if (isNotStarted(status) || status === "cancelled") out.push({ key: "delete", label: "Delete match…", danger: true });
+  // Cancel and delete are for the person who added the match, or an Admin (lib/ownerRule.ts); the others do not see them.
+  if (canManage && isNotStarted(status)) out.push({ key: "cancel", label: "Cancel match…", danger: true });
+  if (canManage && (isNotStarted(status) || status === "cancelled")) out.push({ key: "delete", label: "Delete match…", danger: true });
   return out;
 }
 
@@ -117,7 +120,7 @@ type RowLike = {
 export function toMatchItem(
   m: RowLike,
   tz: string,
-  extra: { myTeams?: ReadonlySet<string>; summary?: { score: string | null; scoreSub: string | null; chase: string | null; result: string | null }; isNew?: boolean; now?: Date } = {},
+  extra: { myTeams?: ReadonlySet<string>; summary?: { score: string | null; scoreSub: string | null; chase: string | null; result: string | null }; isNew?: boolean; now?: Date; canManage?: boolean } = {},
 ): MatchItem {
   const now = (extra.now ?? new Date()).getTime();
   const at = m.scheduled_at ? m.scheduled_at.getTime() : null;
@@ -128,6 +131,6 @@ export function toMatchItem(
     when: formatWhen(m.scheduled_at, tz), venue: m.venue, overs: m.overs, myAnswer: m.my_answer,
     score: extra.summary?.score ?? null, scoreSub: extra.summary?.scoreSub ?? null, chase: extra.summary?.chase ?? null, result: extra.summary?.result ?? null,
     thisWeek: at !== null && at >= now - 12 * 3600 * 1000 && at <= now + WEEK_MS,
-    isNew: !!extra.isNew, at,
+    isNew: !!extra.isNew, at, canManage: extra.canManage ?? true,
   };
 }

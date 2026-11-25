@@ -8,6 +8,7 @@ import { requireMember } from "@/lib/community";
 import { matchSummaries } from "@/lib/listB4";
 import { PLANNED_EXPLAIN, plannedHeadline, toMatchItem } from "@/lib/matchList";
 import { NO_SUMMARY } from "@/lib/matchSummary";
+import { mayManage } from "@/lib/ownerRule";
 import { listMatches } from "@/lib/matches";
 import { rosterFor } from "@/lib/quickMatch";
 import { requireAcceptedUser } from "@/lib/session";
@@ -21,7 +22,8 @@ export default async function MatchesPage({ params, searchParams }: { params: Pr
   const { id } = await params;
   const { planned, deleted, q } = await searchParams;
   const user = await requireAcceptedUser();
-  await requireMember(id, user.id);
+  const { membership } = await requireMember(id, user.id);
+  const admin = membership.role === "admin";
   const [all, tz, roster, teams] = await Promise.all([listMatches(id, user.id), getZone(), rosterFor(id, user.id), listTeams(id)]);
   const summaries = await matchSummaries(all);
   // "My teams": a team I captain or play for. Their badges get the gold ring.
@@ -34,7 +36,7 @@ export default async function MatchesPage({ params, searchParams }: { params: Pr
   const newest = new Set(plannedCount > 0
     ? all.filter((m) => ["draft", "scheduled", "postponed"].includes(m.status)).sort((a, b) => b.created_at.getTime() - a.created_at.getTime()).slice(0, plannedCount).map((m) => m.id)
     : []);
-  const items = all.map((m) => toMatchItem(m, tz, { myTeams, summary: summaries.get(m.id) ?? NO_SUMMARY, isNew: newest.has(m.id) }));
+  const items = all.map((m) => toMatchItem(m, tz, { myTeams, summary: summaries.get(m.id) ?? NO_SUMMARY, isNew: newest.has(m.id), canManage: mayManage({ id: user.id, admin }, m.created_by) }));
   return (
     <Frame communityId={id} title="Matches">
       <div className="stack">

@@ -15,7 +15,8 @@ import { useSnackbar } from "@/components/Snackbar";
 import { bookingsText, PV_ADD_VENUE, searchVenues } from "@/lib/pv";
 import "./pv.css";
 
-export type PvVenue = { id: string; name: string; address: string; contact: string; booking_count: number };
+/** `can_delete` false: only the person who added the venue, or an Admin, may delete it (lib/ownerRule.ts). Missing means yes. */
+export type PvVenue = { id: string; name: string; address: string; contact: string; booking_count: number; can_delete?: boolean };
 
 /** The "Add" button for the top bar of the Venues page (phones and tablets). It opens the sheet that lives in the page body. */
 export function PvAddVenueButton() {
@@ -79,12 +80,12 @@ export default function PvVenues({ communityId, venues, added }: { communityId: 
                         <span className={`pv-badge${used && v.booking_count === top ? " top" : ""}`}>{bookingsText(v.booking_count)}</span>
                         <span className="pv-vact">
                           <Link href={`${base}/venues/${v.id}`} className="pv-ib" aria-label={`Edit ${v.name}`}><IconPencil size={17} /></Link>
-                          <button type="button" className="pv-ib danger" aria-label={used ? `Delete ${v.name} (not available: ${bookingsText(v.booking_count)})` : `Delete ${v.name}`} disabled={used} title={used ? `It has ${bookingsText(v.booking_count)}, so it stays` : undefined} onClick={() => setDel(v)}><IconTrash size={17} /></button>
+                          {v.can_delete !== false && <button type="button" className="pv-ib danger" aria-label={used ? `Delete ${v.name} (not available: ${bookingsText(v.booking_count)})` : `Delete ${v.name}`} disabled={used} title={used ? `It has ${bookingsText(v.booking_count)}, so it stays` : undefined} onClick={() => setDel(v)}><IconTrash size={17} /></button>}
                         </span>
                         <span className="pv-vmenu">
                           <ActionMenu label={`Actions for ${v.name}`} items={[
                             { label: "Edit venue", href: `${base}/venues/${v.id}` },
-                            { label: "Delete venue", danger: true, disabled: used, hint: used ? `It has ${bookingsText(v.booking_count)}, so it stays` : undefined, onSelect: () => setDel(v) },
+                            ...(v.can_delete === false ? [] : [{ label: "Delete venue", danger: true, disabled: used, hint: used ? `It has ${bookingsText(v.booking_count)}, so it stays` : undefined, onSelect: () => setDel(v) }]),
                           ]} />
                         </span>
                       </li>
