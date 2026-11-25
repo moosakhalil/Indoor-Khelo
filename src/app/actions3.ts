@@ -4,7 +4,8 @@ import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { requireAcceptedUser } from "@/lib/session";
 import { isUuid } from "@/lib/community";
-import { updateProfile } from "@/lib/profile";
+import { getProfile, updateProfile } from "@/lib/profile";
+import { afterNumberHref } from "@/lib/profileSetup";
 import { createTeam, deleteTeam, setSquad, updateTeam } from "@/lib/teams";
 import { validateProfileInput, validateTeamInput } from "@/lib/validation";
 import type { FormState } from "@/app/actions";
@@ -29,6 +30,27 @@ export async function saveProfileAction(_prev: FormState, formData: FormData): P
   const communityId = idOf(formData, "communityId");
   if (communityId) revalidatePath(`/c/${communityId}`, "layout");
   return { message: "Profile saved." };
+}
+
+/* ---------- the optional "how do you play" step after picking a number ---------- */
+// Only the four choices are saved (the name is kept as it is). Every choice may stay empty. Then on to Home, or the invite page for a creator.
+export async function saveProfileSetupAction(_prev: FormState, formData: FormData): Promise<FormState> {
+  const user = await requireAcceptedUser();
+  const communityId = idOf(formData, "communityId");
+  if (!communityId) return { error: "Community not found." };
+  const current = await getProfile(user.id);
+  if (!current) return { error: "Profile not found." };
+  const parsed = validateProfileInput({
+    name: current.name,
+    battingHand: formData.get("battingHand"),
+    battingPosition: formData.get("battingPosition"),
+    bowlingStyle: formData.get("bowlingStyle"),
+    playingRole: formData.get("playingRole"),
+  });
+  if (!parsed.ok) return { error: parsed.error };
+  await updateProfile(user.id, parsed.value);
+  revalidatePath(`/c/${communityId}`, "layout");
+  redirect(afterNumberHref(communityId, formData.get("isNew") === "1"));
 }
 
 /* ---------- teams: any approved member can create and change them ---------- */

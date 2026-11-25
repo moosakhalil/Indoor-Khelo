@@ -8,6 +8,8 @@ import SeriesView, { SeriesSide, type SeriesViewData } from "@/components/Series
 import { IconPencil } from "@/components/SrIcons";
 import { requireMember } from "@/lib/community";
 import { formatWhen } from "@/lib/matchRules";
+import { playerOfSeries } from "@/lib/seriesAward";
+import { seriesAwardLines } from "@/lib/seriesAwardDb";
 import { getSeries } from "@/lib/seriesDb";
 import { myTeamIds } from "@/lib/seriesMine";
 import { PAGE_ERRORS, seriesState, teamsText } from "@/lib/seriesView";
@@ -28,12 +30,15 @@ export default async function SeriesPage({ params, searchParams }: { params: Pro
   await requireMember(id, user.id);
   const s = await getSeries(id, seriesId);
   if (!s) notFound();
-  const [tz, mine] = await Promise.all([getZone(), myTeamIds(id, user.id)]);
+  const [tz, mine, awardLines] = await Promise.all([getZone(), myTeamIds(id, user.id), seriesAwardLines(id, seriesId)]);
   const open = s.status === "open";
   const upcoming = s.matches.filter((m) => UPCOMING.includes(m.status));
   const results = s.matches.filter((m) => !UPCOMING.includes(m.status)).slice().reverse();
   // "Play another" copies the latest match that was not cancelled or abandoned
   const latest = [...s.matches].filter((m) => m.status !== "cancelled" && m.status !== "abandoned").sort((a, b) => (b.scheduled_at?.getTime() ?? b.created_at.getTime()) - (a.scheduled_at?.getTime() ?? a.created_at.getTime()))[0];
+  // Player of the Series: leading while the series is open, final once it is closed
+  const won = playerOfSeries(awardLines);
+  const award = won ? { ...won, final: !open } : null;
   const base = `/c/${id}/series/${seriesId}`;
   const dates = s.starts_on || s.ends_on ? `${s.starts_on ?? "…"} to ${s.ends_on ?? "…"}` : null;
   const ref = { id: s.id, name: s.name, open, matchCount: s.match_count };
@@ -58,6 +63,7 @@ export default async function SeriesPage({ params, searchParams }: { params: Pro
     fixtures: upcoming.map(toRow), results: results.map(toRow),
     notes: s.notes, createdBy: s.created_by_name ?? "—", changedBy: s.changed_by_name ?? "—", changedAt: formatWhen(s.updated_at, tz),
     created: !!q.created, error: q.e ? (PAGE_ERRORS[q.e] ?? "That could not be done.") : null,
+    award,
   };
 
   return (

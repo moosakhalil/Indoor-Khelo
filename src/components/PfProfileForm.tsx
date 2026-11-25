@@ -18,7 +18,7 @@ type Opt = { value: string; label: string };
 /** A choice error from the server names the list ("Please choose a playing role from the list."); anything else is about the name. */
 export const isChoiceError = (e: string | undefined) => !!e && /from the list\.?$/.test(e);
 
-function Chips({ name, label, options, value, onChange }: { name: string; label: string; options: readonly Opt[]; value: string; onChange: (v: string) => void }) {
+export function Chips({ name, label, options, value, onChange }: { name: string; label: string; options: readonly Opt[]; value: string; onChange: (v: string) => void }) {
   const gid = useId();
   const all: Opt[] = [...options, { value: "", label: "Not set" }];
   return (

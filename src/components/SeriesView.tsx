@@ -3,6 +3,7 @@
 import "./sr.css";
 import Link from "next/link";
 import { CloseCard, DeleteCard, StatusBanner } from "@/components/SeriesActions";
+import SeriesAward, { type AwardView } from "@/components/SeriesAward";
 import SeriesMatches, { type SeriesRow } from "@/components/SeriesMatches";
 import { IconBars, IconCheck, IconChevron, IconInfo, IconPencil, IconPlus, IconWarn } from "@/components/SrIcons";
 import { PointsTable, SeriesHero, type HeroData, type TableItem } from "@/components/SrParts";
@@ -17,6 +18,8 @@ export type SeriesViewData = {
   fixtures: SeriesRow[]; results: SeriesRow[];
   notes: string; createdBy: string; changedBy: string; changedAt: string;
   created: boolean; error: string | null;
+  /** Player of the Series (leading while open, final once closed). Null until a member has earned points in a finished match. */
+  award?: AwardView | null;
 };
 
 export function SeriesSide({ communityId, d }: { communityId: string; d: SeriesViewData }) {
@@ -65,6 +68,8 @@ export default function SeriesView({ communityId, d }: { communityId: string; d:
       )}
       {d.open && d.clinchedWinner && <StatusBanner communityId={communityId} series={ref} kind="clinched" winner={d.clinchedWinner} />}
       {!d.open && d.drawn && <StatusBanner communityId={communityId} series={ref} kind="drawn" />}
+
+      {d.award && <SeriesAward a={d.award} />}
 
       <SeriesMatches communityId={communityId} seriesId={d.id} fixtures={d.fixtures} results={d.results} />
 

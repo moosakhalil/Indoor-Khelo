@@ -14,6 +14,8 @@ import {
   regenerateInvite,
   requestToJoin,
 } from "@/lib/community";
+import { getProfile } from "@/lib/profile";
+import { afterNumberHref, profileSetupHref, shouldAskProfile } from "@/lib/profileSetup";
 import {
   normalizeInviteCode,
   parsePlayerNumber,
@@ -88,12 +90,16 @@ export async function chooseNumberAction(_prev: FormState, formData: FormData): 
   if (!isUuid(communityId)) return { error: "Community not found." };
   const parsed = parsePlayerNumber(formData.get("number"));
   if (!parsed.ok) return { error: parsed.error };
+  const hadNumberBefore = (await getMembership(communityId, user.id))?.player_number != null;
   const outcome = await chooseNumber(user.id, communityId, parsed.value);
   if (outcome === "taken") return { error: `Number ${parsed.value} was just taken. Please choose another number.` };
   if (outcome === "not_member") return { error: "You can choose a number once you are an approved member." };
   if (outcome === "locked") return { error: "You are in a match that is being played, so your number is locked until it ends." };
   revalidatePath(`/c/${communityId}`, "layout");
-  redirect(formData.get("isNew") === "1" ? `/c/${communityId}/invite?new=1` : `/c/${communityId}`);
+  const isNew = formData.get("isNew") === "1";
+  // First number in this community and no profile yet: ask once how they play (optional, skippable). Never when only changing a number.
+  if (shouldAskProfile(hadNumberBefore, await getProfile(user.id))) redirect(profileSetupHref(communityId, isNew));
+  redirect(afterNumberHref(communityId, isNew));
 }
 
 /* ---------- admin: replace the invite link ---------- */

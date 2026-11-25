@@ -257,3 +257,19 @@
 .sr-sticky { position: sticky; bottom: calc(76px + env(safe-area-inset-bottom, 0px)); z-index: 15; display: grid; grid-template-columns: auto 1fr; gap: 10px; padding: 10px; border-radius: 16px; background: var(--night); border: 1px solid var(--line); }
 @media (min-width: 640px) { .sr-sticky { bottom: 16px; } }
 @media (prefers-reduced-motion: reduce) { .sr-card, .sr-slot { transition: none; } }
+
+/* ---------- Player of the Series card ---------- */
+.sr-award { display: flex; flex-direction: column; gap: 10px; border-color: #6b5a26; background: #1b1809; }
+.sr-award.final { background: #221d10; }
+.sr-award-k { margin: 0; font-size: 0.72rem; font-weight: 800; letter-spacing: 0.07em; text-transform: uppercase; color: var(--gold); }
+.sr-award-w { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 6px 14px; align-items: center; }
+.sr-award-w + .sr-award-w { border-top: 1px solid #3a321a; padding-top: 10px; }
+.sr-award-t { display: flex; flex-direction: column; min-width: 0; gap: 2px; }
+.sr-award-t b { font-size: 1.1rem; font-weight: 800; overflow-wrap: anywhere; }
+.sr-award-pts { font-family: var(--font-num); font-weight: 600; font-size: 1.05rem; color: var(--gold); }
+.sr-award-by { grid-column: 1 / -1; font-size: 0.85rem; }
+.sr-award-by summary { cursor: pointer; min-height: 44px; display: flex; align-items: center; color: var(--mute); font-weight: 700; }
+.sr-award-by ul { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 4px; }
+.sr-award-by li { display: flex; justify-content: space-between; gap: 10px; padding: 6px 10px; border-radius: 10px; background: rgba(255, 255, 255, 0.04); }
+.sr-award-next { margin: 0; font-size: 0.88rem; overflow-wrap: anywhere; }
+.sr-award-note { margin: 0; line-height: 1.45; }
