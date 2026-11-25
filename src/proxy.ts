@@ -2,10 +2,11 @@ import { auth } from "@/lib/auth/server";
 
 // Everything needs a signed-in user except the pages listed here.
 // "/join" covers /join/KH-XXXX so an invite link can show the community before sign-in.
+// "/install" is the shareable "add to home screen" guide for iPhone and Android.
 // "/api/session" is the small route that renews the session cookie for those public pages.
 export default auth.middleware({
   loginUrl: "/",
-  publicRoutes: ["/", "/offline", "/join", "/api/session", "/r", "/p"],
+  publicRoutes: ["/", "/offline", "/join", "/api/session", "/r", "/p", "/install"],
 });
 
 export const config = {

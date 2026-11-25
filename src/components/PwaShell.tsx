@@ -129,8 +129,11 @@ export default function PwaShell() {
   }
 
   // The welcome page has its own install row (EnInstallHint), so the floating one is not shown there too.
-  const onWelcome = usePathname() === "/";
-  const iosSteps = iosHelp === "safari-steps";
+  // The /install page is the install help, so the floating banners stay away there too.
+  const path = usePathname();
+  const onInstallPage = path === "/install";
+  const onWelcome = path === "/" || onInstallPage;
+  const iosSteps = iosHelp === "safari-steps" && !onInstallPage;
   return (
     <>
       <div className="ac-toasts" aria-live="polite">
@@ -160,7 +163,7 @@ export default function PwaShell() {
             </div>
           </div>
         )}
-        {iosHelp === "open-safari" && (
+        {iosHelp === "open-safari" && !onInstallPage && (
           <div className="ac-toast stacked" role="region" aria-label="Open this page in Safari to install">
             <div className="ac-trow">
               <span className="ac-tic blue"><AcIcon name="link" size={22} /></span>
