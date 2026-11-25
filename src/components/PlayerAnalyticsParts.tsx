@@ -189,20 +189,20 @@ export function DuelCard({ rows, kind, communityId, title, numberOf }: { rows: D
       ) : (
         <>
           <div className="ld-scroll">
-            <table className="ld-tbl ld-duels" aria-label={kind === "bat" ? "Batter against each bowler" : "Bowler against each batter"}>
+            <table className="ld-tbl ld-duels ld-stack" aria-label={kind === "bat" ? "Batter against each bowler" : "Bowler against each batter"}>
               <thead><tr><th scope="col">{kind === "bat" ? "Bowler" : "Batter"}</th><th scope="col">B</th><th scope="col">R</th><th scope="col">{kind === "bat" ? "Out" : "Wkts"}</th><th scope="col">{kind === "bat" ? <>SR<small> over {STRIKE_RATE_HIGHLIGHT} is gold</small></> : "Dots"}</th></tr></thead>
               <tbody>
                 {rows.map((d) => (
                   <tr key={d.opponentUserId}>
-                    <th scope="row" className="ld-opp"><Shirt number={numberOf(d.opponentUserId)} size="small" /><Link href={`/c/${communityId}/players/${d.opponentUserId}`}><b>{d.name}</b></Link></th>
-                    <td>{d.balls}</td><td>{d.runs}</td><td>{d.dismissals}</td>
-                    <td className={kind === "bat" && d.strikeRate !== null && d.strikeRate > STRIKE_RATE_HIGHLIGHT ? "best" : undefined}>{kind === "bat" ? (d.strikeRate === null ? "–" : f1(d.strikeRate)) : d.dots}</td>
+                    <th scope="row" className="ld-opp ld-who-cell"><Shirt number={numberOf(d.opponentUserId)} size="small" /><Link href={`/c/${communityId}/players/${d.opponentUserId}`}><b>{d.name}</b></Link></th>
+                    <td data-label="Balls">{d.balls}</td><td data-label="Runs">{d.runs}</td><td data-label={kind === "bat" ? "Out" : "Wkts"}>{d.dismissals}</td>
+                    <td data-label={kind === "bat" ? "SR" : "Dots"} className={kind === "bat" && d.strikeRate !== null && d.strikeRate > STRIKE_RATE_HIGHLIGHT ? "best" : undefined}>{kind === "bat" ? (d.strikeRate === null ? "–" : f1(d.strikeRate)) : d.dots}</td>
                   </tr>
                 ))}
               </tbody>
             </table>
           </div>
-          <p className="muted small" style={{ margin: "8px 0 0", lineHeight: 1.5 }}>B balls faced (a wide is not a ball faced), R runs off the bat, {kind === "bat" ? "Out times dismissed by that bowler (a run-out is not the bowler's), SR strike rate" : "Wkts wickets credited to the bowler, Dots balls with no run off the bat"}. Members only.</p>
+          <p className="muted small" style={{ margin: "8px 0 0", lineHeight: 1.5 }}>B balls faced (a wide is not a ball faced), R runs off the bat, {kind === "bat" ? `Out times dismissed by that bowler (a run-out is not the bowler's), SR strike rate (over ${STRIKE_RATE_HIGHLIGHT} is gold)` : "Wkts wickets credited to the bowler, Dots balls with no run off the bat"}. Members only.</p>
         </>
       )}
     </section>

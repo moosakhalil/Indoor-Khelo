@@ -38,7 +38,7 @@ export default async function PlayerAnalyticsPage({ params, searchParams }: { pa
 
   return (
     <Frame communityId={id} title="Analytics" subtitle={<small className="muted">{p.name}</small>} back={`/c/${id}/players/${userId}`}
-      right={<Link href={`/c/${id}/players/${userId}`} className="btn ghost small ld-top-btn"><IconStats size={16} /> Stats page</Link>}>
+      right={<Link href={`/c/${id}/players/${userId}`} className="btn ghost small ld-top-btn ld-hide-sm"><IconStats size={16} /> Stats page</Link>}>
       <div className="stack ld-page ld-analytics">
         <PlayerHeader name={p.name} number={p.player_number} role={roleLabel(p.playing_role)} />
         <AnalyticsTabs

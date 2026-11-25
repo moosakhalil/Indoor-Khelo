@@ -211,7 +211,7 @@
 .pf-figs small { color: var(--mute); font-size: 0.72rem; }
 .pf-mrow > svg { color: var(--mute); }
 .pf-count-shown { color: var(--mute); font-size: 0.8rem; font-weight: 600; }
-.pf-seg { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; background: var(--card2); border-radius: 12px; padding: 4px; margin-top: 8px; }
+.pf-seg { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 4px; background: var(--card2); border-radius: 12px; padding: 4px; margin-top: 8px; }
 .pf-seg a { display: inline-flex; align-items: center; justify-content: center; min-height: 44px; border-radius: 9px; font-weight: 700; font-size: 0.88rem; color: var(--mute); }
 .pf-seg a.on { background: #2c3a68; color: var(--white); }
 .pf-help { background: var(--card); border: 1px solid var(--line); border-radius: 18px; }

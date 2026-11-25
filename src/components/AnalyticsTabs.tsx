@@ -8,7 +8,7 @@ import { useId, useState } from "react";
 export type TabKey = "form" | "runs" | "duels";
 export type Metric = "runs" | "wickets";
 
-export const ANALYTICS_TABS: readonly (readonly [TabKey, string])[] = [["form", "Form"], ["runs", "Run sources"], ["duels", "Batter v bowler"]];
+export const ANALYTICS_TABS: readonly (readonly [TabKey, string])[] = [["form", "Form"], ["runs", "Run sources"], ["duels", "Duels"]];
 
 const remember = (tab: TabKey, metric: Metric) => {
   try {

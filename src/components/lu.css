@@ -146,7 +146,7 @@
 .lu-pill.wk.on { background: rgba(229, 72, 77, 0.18); border-color: var(--red); color: #ffb3b6; }
 .lu-pill.wk.on.none { background: var(--gold); border-color: var(--gold); color: var(--night); }
 .lu-pill:has(.lu-sr:focus-visible) { outline: 2px solid var(--gold); outline-offset: 2px; }
-.lu-pad { display: grid; grid-template-columns: repeat(6, 1fr); gap: 8px; }
+.lu-pad { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 8px; }
 .lu-pad .lu-pill { justify-content: center; padding: 0; min-width: 0; border-radius: 12px; font-size: 1rem; font-family: var(--font-num); }
 .lu-pad .lu-pill.on { background: var(--gold); color: var(--night); }
 .lu-hint { margin: 8px 2px 0; color: var(--mute); font-size: 0.82rem; line-height: 1.4; }

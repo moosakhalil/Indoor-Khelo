@@ -31,7 +31,7 @@
 /* ---------- list: segments, search, cards ---------- */
 .sr-list { display: flex; flex-direction: column; gap: 12px; padding-bottom: 56px; }
 @media (min-width: 640px) { .sr-list { padding-bottom: 0; } }
-.sr-seg { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; padding: 4px; background: var(--card); border: 1px solid var(--line); border-radius: 14px; }
+.sr-seg { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 4px; padding: 4px; background: var(--card); border: 1px solid var(--line); border-radius: 14px; }
 .sr-seg button { min-height: 44px; border-radius: 10px; font-weight: 700; font-size: 0.88rem; color: var(--mute); display: inline-flex; align-items: center; justify-content: center; gap: 6px; }
 .sr-seg button.on { background: var(--gold); color: var(--night); }
 .sr-n { display: inline-flex; align-items: center; justify-content: center; min-width: 22px; height: 20px; padding: 0 6px; border-radius: 999px; background: var(--card2); border: 1px solid var(--line); font-size: 0.74rem; font-weight: 800; color: var(--mute); }

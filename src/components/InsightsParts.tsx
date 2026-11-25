@@ -108,20 +108,20 @@ export function BowlCard({ rows, title, communityId, numberOf }: { rows: OverBow
       <b>{title}</b>
       {rows.length === 0 ? <p className="muted small" style={{ margin: "6px 0 0" }}>No bowling by members yet.</p> : (
         <div className="ld-scroll">
-          <table className="ld-tbl" aria-label={title}>
+          <table className="ld-tbl ld-stack" aria-label={title}>
             <thead><tr><th scope="col">Bowler</th><th scope="col">Balls</th><th scope="col">Runs</th><th scope="col">Wkts</th><th scope="col">Econ</th></tr></thead>
             <tbody>
               {rows.map((r, i) => {
                 const best = r.ranked && i === 0;
                 return (
                   <tr key={r.userId} className={r.ranked ? undefined : "dim"}>
-                    <th scope="row" className="ld-bowler">
+                    <th scope="row" className="ld-bowler ld-who-cell">
                       <b className="ld-rank">{r.ranked ? i + 1 : "–"}</b>
                       <Shirt number={numberOf(r.userId)} size="small" />
                       <span className="ld-bowler-t"><Link href={`/c/${communityId}/players/${r.userId}`}><b>{r.name}</b></Link>{!r.ranked && <small className="muted">needs {BOWL_BY_OVER_MIN_BALLS} balls to be ranked</small>}</span>
                     </th>
-                    <td>{r.balls}</td><td>{r.runs}</td><td>{r.wickets}</td>
-                    <td className={best ? "best" : undefined}>{r.economy === null ? "–" : r.economy.toFixed(2)}</td>
+                    <td data-label="Balls">{r.balls}</td><td data-label="Runs">{r.runs}</td><td data-label="Wkts">{r.wickets}</td>
+                    <td data-label="Econ" className={best ? "best" : undefined}>{r.economy === null ? "–" : r.economy.toFixed(2)}</td>
                   </tr>
                 );
               })}

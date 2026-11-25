@@ -337,7 +337,7 @@ describe("player analytics tabs", () => {
   it("three tabs without a reload: only the chosen panel is visible; arrow keys move between tabs", () => {
     const { container } = render(tabsFor(pts(5), [], "form"));
     const tabs = screen.getAllByRole("tab");
-    expect(tabs.map((t) => t.textContent)).toEqual(["Form", "Run sources", "Batter v bowler"]);
+    expect(tabs.map((t) => t.textContent)).toEqual(["Form", "Run sources", "Duels"]);
     expect(container.querySelector(".ld-p-runs")?.hasAttribute("hidden")).toBe(true);
     fireEvent.click(tabs[1]!);
     expect(tabs[1]!.getAttribute("aria-selected")).toBe("true");

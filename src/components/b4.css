@@ -17,7 +17,7 @@
 
 /* ---------- matches list: segments, search, chips ---------- */
 .ml-list { display: flex; flex-direction: column; gap: 12px; }
-.ml-seg { display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px; padding: 4px; background: var(--card); border: 1px solid var(--line); border-radius: 14px; }
+.ml-seg { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 4px; padding: 4px; background: var(--card); border: 1px solid var(--line); border-radius: 14px; }
 .ml-seg button { min-height: 44px; border-radius: 10px; font-weight: 700; font-size: 0.88rem; color: var(--mute); display: inline-flex; align-items: center; justify-content: center; gap: 6px; }
 .ml-seg button.on { background: var(--gold); color: var(--night); }
 .ml-seg button.on .ml-n { background: rgba(11, 16, 32, 0.14); border-color: transparent; color: var(--night); }

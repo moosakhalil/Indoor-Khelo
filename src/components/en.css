@@ -121,7 +121,7 @@
 @keyframes en-turn { to { transform: rotate(360deg); } }
 
 /* ---------- create: steps and preview ---------- */
-.en-steps { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
+.en-steps { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; }
 .en-steps i { display: block; height: 4px; border-radius: 2px; background: var(--line); }
 .en-steps li.on i { background: var(--gold); }
 .en-steps span { display: block; margin-top: 6px; font-size: 0.72rem; font-weight: 700; color: var(--mute); }

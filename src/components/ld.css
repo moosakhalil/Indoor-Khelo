@@ -33,6 +33,8 @@
 .ld-note b { color: var(--white); }
 .ld-banner { display: flex; gap: 10px; align-items: center; }
 .ld-top-btn { white-space: nowrap; margin-left: auto; }
+/* On a phone the top bar only has room for the title; the same action sits at the bottom of the page. */
+@media (max-width: 639px) { .ld-hide-sm { display: none; } }
 .ld-newtag { font-size: 0.7rem; font-weight: 800; letter-spacing: 0.06em; text-transform: uppercase; padding: 3px 8px; border-radius: 6px; background: var(--gold); color: var(--night); }
 
 /* ----- sheet (bottom sheet on a phone, dialog on a wider screen) ----- */
@@ -162,6 +164,7 @@
 .ld-pair-runs small { font-family: inherit; font-size: 0.7rem; }
 .ld-two { display: grid; grid-template-columns: minmax(0, 1fr); gap: 12px; align-items: start; }
 .ld-bottom-btn { width: 100%; }
+@media (min-width: 640px) { .ld-bottom-btn { display: none; } }
 .ld-scroll { overflow-x: auto; margin: 0 -4px; padding: 0 4px; }
 .ld-tbl { width: 100%; border-collapse: collapse; margin-top: 8px; font-variant-numeric: tabular-nums; }
 .ld-tbl th, .ld-tbl td { padding: 8px 6px; border-top: 1px solid var(--line); text-align: right; font-size: 0.9rem; }
@@ -175,7 +178,19 @@
 .ld-bowl .ld-tbl th, .ld-bowl .ld-tbl td { padding-left: 3px; padding-right: 3px; }
 .ld-bowl .ld-tbl td { font-size: 0.85rem; }
 .ld-bowl .ld-tbl thead th { font-size: 0.7rem; letter-spacing: 0; }
-.ld-bowl .ld-tbl thead th:first-child { width: 42%; }
+.ld-bowl .ld-tbl thead th:first-child { width: auto; }
+.ld-bowl .ld-bowler { gap: 8px; }
+/* A phone has no room for five or six columns: each row becomes a small card (name on top, the labelled figures under it). */
+@media (max-width: 519px) {
+  .ld-stack, .ld-stack tbody { display: block; }
+  .ld-stack thead { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0, 0, 0, 0); }
+  .ld-stack tr { display: grid; grid-template-columns: repeat(var(--cols, 4), minmax(0, 1fr)); gap: 2px 8px; padding: 10px 0; border-top: 1px solid var(--line); }
+  .ld-stack tr:first-child { border-top: 0; }
+  .ld-stack th.ld-who-cell { grid-column: 1 / -1; display: flex; padding: 0 0 4px; border: 0; }
+  .ld-stack td { display: block; border: 0; padding: 2px 0; text-align: left; font-size: 1rem; }
+  .ld-tbl.ld-stack th.ld-who-cell { position: static; background: transparent; }
+  .ld-stack td::before { content: attr(data-label); display: block; font-size: 0.68rem; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; color: var(--mute); }
+}
 .ld-bowler-t { display: flex; flex-direction: column; min-width: 0; }
 .ld-bowler .ld-rank { width: 20px; flex: 0 0 auto; }
 @media (min-width: 640px) { .ld-tiles { grid-template-columns: repeat(2, minmax(0, 1fr)); } .ld-tiles .ld-tile:first-child { grid-column: 1 / -1; } }

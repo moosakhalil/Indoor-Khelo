@@ -215,7 +215,7 @@ button.pp-ball { cursor: pointer; }
 .pp-danger, .pp-stop { display: flex; flex-direction: column; }
 
 /* ---------- start of the match / innings ---------- */
-.pp-steps { list-style: none; display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; margin: 0; padding: 0; font-size: 0.72rem; font-weight: 700; color: var(--mute); }
+.pp-steps { list-style: none; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; margin: 0; padding: 0; font-size: 0.72rem; font-weight: 700; color: var(--mute); }
 .pp-steps li { display: flex; flex-direction: column; gap: 4px; }
 .pp-steps li > span:last-child { display: inline-flex; align-items: center; gap: 4px; }
 .pp-seg { height: 5px; border-radius: 3px; background: var(--line); }

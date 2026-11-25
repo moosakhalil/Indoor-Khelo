@@ -154,14 +154,14 @@ textarea.field { min-height: 88px; resize: vertical; }
   background: var(--nav); border-top: 1px solid var(--line);
   padding: 6px max(8px, env(safe-area-inset-left, 0px)) calc(8px + env(safe-area-inset-bottom, 0px));
 }
-.nav ul { list-style: none; margin: 0 auto; padding: 0; max-width: 480px; display: grid; grid-template-columns: repeat(5, 1fr); }
+.nav ul { list-style: none; margin: 0 auto; padding: 0; max-width: 480px; display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); }
 .nav .nav-brand, .nav-more { display: none; }
 .nav a { display: flex; flex-direction: column; align-items: center; gap: 2px; min-height: 52px; justify-content: center; color: var(--mute); font-size: 0.74rem; font-weight: 600; }
 .nav a[aria-current="page"] { color: var(--gold); }
 .nav svg { width: 24px; height: 24px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
 
 /* ---------- player number picker ---------- */
-.ngrid { display: grid; grid-template-columns: repeat(8, 1fr); gap: 6px; }
+.ngrid { display: grid; grid-template-columns: repeat(8, minmax(0, 1fr)); gap: 6px; }
 .num {
   aspect-ratio: 1; min-width: 0; border-radius: 10px; border: 1px solid var(--line); background: var(--card);
   font-weight: 700; font-size: 0.85rem; display: flex; align-items: center; justify-content: center;
@@ -219,7 +219,7 @@ table.sc th:nth-child(2) { text-align: left; }
 .pad-msg.green { border-color: var(--green); }
 .pad-msg.red { border-color: var(--red); color: #ff9a9e; }
 .pad-controls { flex: none; padding-top: 10px; }
-.pad-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+.pad-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; }
 .pbtn { min-height: 58px; border-radius: 14px; border: 1.5px solid var(--line); background: var(--card); font-weight: 800; font-size: 1.15rem; display: flex; align-items: center; justify-content: center; text-align: center; padding: 0 4px; }
 .pbtn:active:not(:disabled) { background: var(--card2); transform: scale(0.97); }
 .pbtn:disabled { opacity: 0.4; cursor: not-allowed; }
@@ -282,7 +282,7 @@ table.sc th:nth-child(2) { text-align: left; }
 .cb.red[aria-pressed="true"] { background: rgba(229, 72, 77, 0.18); border-color: var(--red); color: #ff9a9e; }
 .cb:disabled { opacity: 0.4; cursor: not-allowed; }
 .cb.gone { text-decoration: line-through; }
-.out-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.out-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
 .brow { display: flex; align-items: center; gap: 12px; width: 100%; min-height: 56px; padding: 8px 12px; border-radius: 14px; border: 1.5px solid var(--line); background: var(--card2); text-align: left; }
 .brow:disabled { opacity: 0.5; }
 .avatar { width: 36px; height: 36px; border-radius: 10px; background: var(--card); border: 1px solid var(--line); display: inline-flex; align-items: center; justify-content: center; font-weight: 800; font-size: 0.8rem; flex: 0 0 auto; }
@@ -306,7 +306,7 @@ table.sc th:nth-child(2) { text-align: left; }
 @media (prefers-reduced-motion: reduce) { .coin.flipping { animation: none !important; } }
 
 /* ---------- statistics pages (Phase 6) ---------- */
-.statgrid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 8px; }
+.statgrid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; margin-top: 8px; }
 .statcell { background: var(--card2); border: 1px solid var(--line); border-radius: 12px; padding: 10px 8px; text-align: center; display: flex; flex-direction: column; gap: 2px; min-width: 0; }
 .statcell b { font-size: 1.15rem; }
 .statcell small { font-size: 0.72rem; line-height: 1.2; }

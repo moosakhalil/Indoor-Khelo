@@ -115,7 +115,7 @@
 .pb-match { min-height: 56px; }
 .pb-pair { display: inline-flex; flex: none; gap: 4px; }
 .pb-mname { overflow-wrap: anywhere; font-weight: 700; }
-.pb-segctl { display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px; padding: 4px; border-radius: 14px; background: var(--card2); border: 1px solid var(--line); }
+.pb-segctl { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 4px; padding: 4px; border-radius: 14px; background: var(--card2); border: 1px solid var(--line); }
 .pb-segbtn { min-height: 44px; border-radius: 10px; font-weight: 700; font-size: 0.82rem; padding: 0 2px; }
 .pb-segbtn.on { background: var(--gold); color: var(--night); }
 .pb-segbtn.on.cancel { background: var(--red-solid); color: #fff; }
@@ -165,7 +165,7 @@
 .pb-qchip { display: inline-flex; align-items: center; gap: 8px; min-height: 44px; padding: 0 14px; border-radius: 999px; border: 1px solid var(--line); background: var(--card2); font-weight: 600; font-size: 0.82rem; color: var(--mute); }
 .pb-qchip b { font-family: var(--font-num); color: var(--white); }
 .pb-qchip:hover { border-color: var(--gold); }
-.pb-methods { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.pb-methods { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
 .pb-mchip { display: inline-flex; align-items: center; justify-content: center; gap: 5px; min-height: 44px; border-radius: 12px; border: 1px solid var(--line); background: var(--card2); font-weight: 600; font-size: 0.85rem; padding: 0 6px; }
 .pb-mchip.on { background: var(--gold); color: var(--night); border-color: var(--gold); font-weight: 800; }
 .pb-two { align-items: start; }
@@ -214,7 +214,7 @@
 .pb-panel-card .pb-save { width: 100%; }
 
 /* ---------- link matches and my payments ---------- */
-.pb-ftabs { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; padding: 4px; border-radius: 14px; background: var(--card2); border: 1px solid var(--line); }
+.pb-ftabs { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 4px; padding: 4px; border-radius: 14px; background: var(--card2); border: 1px solid var(--line); }
 .pb-ftab { min-height: 44px; border-radius: 10px; font-weight: 700; font-size: 0.88rem; color: var(--mute); }
 .pb-ftab b { font-family: var(--font-num); margin-left: 4px; }
 .pb-ftab.on { background: var(--card); color: var(--white); box-shadow: inset 0 0 0 1.5px var(--gold); }

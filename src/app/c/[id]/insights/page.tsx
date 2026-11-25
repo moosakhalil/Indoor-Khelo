@@ -10,7 +10,7 @@ import { requireAcceptedUser } from "@/lib/session";
 export const metadata: Metadata = { title: "Insights" };
 export const dynamic = "force-dynamic";
 
-const TABS = [["records", "Records"], ["partnerships", "Partnerships"], ["bowling", "Bowling by over"]] as const;
+const TABS = [["records", "Records"], ["partnerships", "Partnerships"], ["bowling", "Bowling"]] as const;
 
 // Community-wide records, the best partnerships, and who bowls best at the start and the end of an innings.
 export default async function InsightsPage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ tab?: string }> }) {
@@ -23,7 +23,7 @@ export default async function InsightsPage({ params, searchParams }: { params: P
   const numbers = new Map(members.map((m) => [m.user_id, m.player_number] as const));
   const numberOf = (userId: string) => numbers.get(userId) ?? null;
   return (
-    <Frame communityId={id} title="Insights" subtitle={<small className="muted">Worked out from finished matches</small>} back={`/c/${id}/teams`} right={<CompareButton communityId={id} className="btn ghost small ld-top-btn" />}>
+    <Frame communityId={id} title="Insights" subtitle={<small className="muted">Worked out from finished matches</small>} back={`/c/${id}/teams`} right={<CompareButton communityId={id} className="btn ghost small ld-top-btn ld-hide-sm" />}>
       <div className="stack ld-page">
         <InsightsTabs communityId={id} tab={tab} tabs={TABS} />
         {states.length === 0 && (

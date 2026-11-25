@@ -112,7 +112,7 @@
 .rp-tile { display: flex; flex-direction: column; gap: 2px; padding: 12px 14px; border-radius: 14px; background: var(--card); border: 1px solid var(--line); }
 .rp-tile b { font-size: 1.9rem; line-height: 1.05; }
 .rp-tile span { color: var(--mute); font-size: 0.78rem; font-weight: 600; }
-@media (min-width: 640px) { .rp-tiles { grid-template-columns: repeat(4, 1fr); } }
+@media (min-width: 640px) { .rp-tiles { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
 .rp-by { margin: 0; padding: 12px 14px; border-radius: 12px; background: var(--card); border: 1px solid var(--line); }
 .rp-by b { color: var(--white); }
 

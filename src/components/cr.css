@@ -9,7 +9,7 @@
 .cr-sub { color: var(--mute); font-size: 0.82rem; font-weight: 600; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; line-clamp: 2; overflow: hidden; overflow-wrap: anywhere; }
 
 /* ---------- progress ---------- */
-.cr-prog { list-style: none; display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; margin: 4px 0 12px; padding: 0; }
+.cr-prog { list-style: none; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; margin: 4px 0 12px; padding: 0; }
 .cr-prog li { border-top: 4px solid var(--line); border-radius: 2px; padding-top: 4px; font-size: 0.72rem; font-weight: 700; color: var(--mute); min-width: 0; }
 .cr-prog li.done { border-top-color: var(--green); }
 .cr-prog li.now { border-top-color: var(--gold); color: var(--gold); }
