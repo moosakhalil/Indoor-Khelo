@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { isUuid } from "@/lib/community";
 import { createQuickMatch } from "@/lib/quickMatch";
 import { validateQuickMatch } from "@/lib/quickMatchRules";
+import { AuthUnreachableError } from "@/lib/authError";
 import { getSessionUser } from "@/lib/session";
 
 // A match that was set up on a phone with no signal is created here once the signal is back. Sending it twice creates it once.
@@ -16,7 +17,10 @@ const MESSAGES: Record<string, string> = {
 
 export async function POST(req: Request) {
   let user;
-  try { user = await getSessionUser(); } catch { return NextResponse.json({ error: "session" }, { status: 401 }); }
+  try { user = await getSessionUser(); } catch (e) {
+    // 503 = the sign-in service did not answer: the phone keeps its data and tries again, without saying "Signed out".
+    return NextResponse.json({ error: "session" }, { status: e instanceof AuthUnreachableError ? 503 : 401 });
+  }
   if (!user || !user.termsAccepted) return NextResponse.json({ error: "session" }, { status: 401 });
   let body: { communityId?: unknown; deviceId?: unknown; match?: unknown };
   try { body = await req.json(); } catch { return NextResponse.json({ ok: false, message: "Bad request." }, { status: 400 }); }

@@ -4,6 +4,7 @@ import { getMatch } from "@/lib/matches";
 import { getOrigin } from "@/lib/origin";
 import { shareTokenOf } from "@/lib/reports";
 import { pdfResponse } from "@/lib/reportPdfResponse";
+import { AuthUnreachableError } from "@/lib/authError";
 import { getSessionUser } from "@/lib/session";
 import { getZone } from "@/lib/zone";
 
@@ -14,7 +15,10 @@ export async function GET(req: Request, ctx: { params: Promise<{ matchId: string
   const communityId = url.searchParams.get("communityId") ?? "";
   if (!isUuid(communityId) || !isUuid(matchId)) return NextResponse.json({ error: "bad_request" }, { status: 400 });
   let user;
-  try { user = await getSessionUser(); } catch { return NextResponse.json({ error: "session" }, { status: 401 }); }
+  try { user = await getSessionUser(); } catch (e) {
+    // 503 = the sign-in service did not answer: the phone keeps its data and tries again, without saying "Signed out".
+    return NextResponse.json({ error: "session" }, { status: e instanceof AuthUnreachableError ? 503 : 401 });
+  }
   if (!user || !user.termsAccepted) return NextResponse.json({ error: "session" }, { status: 401 });
   const member = await getMembership(communityId, user.id);
   if (!member || member.status !== "approved") return NextResponse.json({ error: "forbidden" }, { status: 403 });

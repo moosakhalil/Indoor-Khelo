@@ -2,6 +2,7 @@
    - /api/*                     NetworkOnly. API answers are never cached.
    - /_next/static/*            CacheFirst.
    - pages with personal data   NetworkOnly (payments, profile, account, terms). Protects shared or lost phones.
+   - pages with a sign-in button NetworkOnly (welcome, invite). A saved copy would look like being signed out.
    - other pages (rosters etc.) NetworkFirst with a 3 second timeout, cached copy as backup.
    - anything that cannot load  falls back to the /offline page.
    - A new version waits until the person taps Refresh (no skipWaiting on install), so scoring is never interrupted. */
@@ -37,6 +38,11 @@ self.addEventListener("activate", (event) => {
       for (const name of await caches.keys()) {
         if (name.startsWith("ik-") && !keep.has(name)) await caches.delete(name);
       }
+      // Remove copies that an older version saved and this one never saves. Other saved pages stay.
+      const pages = await caches.open(PAGE_CACHE);
+      for (const saved of await pages.keys()) {
+        if (isNeverSaved(new URL(saved.url).pathname)) await pages.delete(saved);
+      }
       await self.clients.claim();
     })(),
   );
@@ -69,7 +75,8 @@ async function cachePages(urls) {
 }
 
 const PRIVATE = [/^\/c\/[^/]+\/payments(\/|$)/, /^\/c\/[^/]+\/profile(\/|$)/, /^\/terms(\/|$)/, /^\/account(\/|$)/, /^\/profile(\/|$)/, /^\/c\/[^/]+\/alerts(\/|$)/];
-const isPrivate = (path) => PRIVATE.some((re) => re.test(path));
+const SIGN_IN = [/^\/$/, /^\/join(\/|$)/];
+const isNeverSaved = (path) => PRIVATE.some((re) => re.test(path)) || SIGN_IN.some((re) => re.test(path));
 
 function withTimeout(promise, ms) {
   return new Promise((resolve, reject) => {
@@ -105,7 +112,7 @@ self.addEventListener("fetch", (event) => {
   }
 
   if (req.mode === "navigate") {
-    if (isPrivate(url.pathname)) {
+    if (isNeverSaved(url.pathname)) {
       event.respondWith(fetch(req).catch(offlineFallback));
       return;
     }

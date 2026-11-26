@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { AuthUnreachableError } from "@/lib/authError";
 import { getSessionUser } from "@/lib/session";
 import { isUuid } from "@/lib/community";
 import { applyEvents } from "@/lib/scoring";
@@ -8,7 +9,10 @@ import { applyEvents } from "@/lib/scoring";
 export async function POST(req: Request, ctx: { params: Promise<{ matchId: string }> }) {
   const { matchId } = await ctx.params;
   let user;
-  try { user = await getSessionUser(); } catch { return NextResponse.json({ error: "session" }, { status: 401 }); }
+  try { user = await getSessionUser(); } catch (e) {
+    // 503 = the sign-in service did not answer: the phone keeps its data and tries again, without saying "Signed out".
+    return NextResponse.json({ error: "session" }, { status: e instanceof AuthUnreachableError ? 503 : 401 });
+  }
   if (!user || !user.termsAccepted) return NextResponse.json({ error: "session" }, { status: 401 });
   let body: { communityId?: unknown; deviceId?: unknown; events?: unknown };
   try { body = await req.json(); } catch { return NextResponse.json({ error: "bad_request" }, { status: 400 }); }

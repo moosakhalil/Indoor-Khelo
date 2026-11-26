@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { addPayment } from "@/lib/bookings";
 import { isUuid } from "@/lib/community";
 import { validatePayment } from "@/lib/payments";
+import { AuthUnreachableError } from "@/lib/authError";
 import { getSessionUser } from "@/lib/session";
 
 // A payment or refund recorded by a member. The id comes from the phone, so a record sent twice (after a lost signal) is saved once.
@@ -14,7 +15,10 @@ const MESSAGES: Record<string, string> = {
 export async function POST(req: Request, ctx: { params: Promise<{ bookingId: string }> }) {
   const { bookingId } = await ctx.params;
   let user;
-  try { user = await getSessionUser(); } catch { return NextResponse.json({ error: "session" }, { status: 401 }); }
+  try { user = await getSessionUser(); } catch (e) {
+    // 503 = the sign-in service did not answer: the phone keeps its data and tries again, without saying "Signed out".
+    return NextResponse.json({ error: "session" }, { status: e instanceof AuthUnreachableError ? 503 : 401 });
+  }
   if (!user || !user.termsAccepted) return NextResponse.json({ error: "session" }, { status: 401 });
   let body: { communityId?: unknown; payment?: Record<string, unknown> };
   try { body = await req.json(); } catch { return NextResponse.json({ ok: false, message: "Bad request." }, { status: 400 }); }
